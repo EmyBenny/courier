@@ -1,0 +1,6 @@
+{
+  "name": "Camber Dispatch",
+  "description": "Real-time courier tracking, parcel task management, live Google Maps routing, and customer ETA notification alerts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
