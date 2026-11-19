@@ -5,19 +5,18 @@
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  --color-slate-surface: #36313E;
-  --color-slate-canvas: #474150;
-  --color-lavender-muted: #9C99B8;
-  --color-ivory-crisp: #F5FFF4;
-  --color-amber-gold: #FFBB00;
+  --color-bordo: #6C151E;
+  --color-emerald-deep: #092A28;
+  --color-emerald-canvas: #0F3D3A;
+  --color-cream: #F5DABF;
 }
 
 @layer base {
   html,
   body {
     font-family: var(--font-sans);
-    background-color: #474150;
-    color: #F5FFF4;
+    background-color: #0F3D3A;
+    color: #F5DABF;
   }
 
   h1,
@@ -32,20 +31,62 @@
   font-variant-numeric: tabular-nums;
 }
 
+@keyframes heroHoverFloat {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
+}
+
+@keyframes heroInsetOrbit {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(6px, -7px, 0);
+  }
+}
+
+.animate-hero-float {
+  animation: heroHoverFloat 7s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-hero-inset {
+  animation: heroInsetOrbit 5.5s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-hero-float:hover,
+.animate-hero-inset:hover {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-hero-float,
+  .animate-hero-inset {
+    animation: none;
+  }
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #36313E;
+  background: #092A28;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #9C99B8;
+  background: #6C151E;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #FFBB00;
+  background: #F5DABF;
 }
