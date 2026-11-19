@@ -5,20 +5,19 @@
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  --color-espresso: #3B2A1F;
-  --color-mocha: #6F4E37;
-  --color-caramel: #B08968;
-  --color-almond: #D4B996;
-  --color-parchment: #EDE3D4;
-  --color-ivory: #FFF9F0;
+  --color-pine-deep: #0F2A1D;
+  --color-forest-canvas: #375534;
+  --color-sage-muted: #6B9071;
+  --color-celadon-mist: #AEC3B0;
+  --color-mint-cream: #E3EED4;
 }
 
 @layer base {
   html,
   body {
     font-family: var(--font-sans);
-    background-color: #FFF9F0;
-    color: #3B2A1F;
+    background-color: #375534;
+    color: #E3EED4;
   }
 
   h1,
@@ -33,21 +32,20 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Custom subtle scrollbars matching parchment palette */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #EDE3D4;
+  background: #0F2A1D;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #B08968;
+  background: #6B9071;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #6F4E37;
+  background: #AEC3B0;
 }

@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-// Tier 1 Google Maps Platform Quota & Auth Error Listeners
+// Tier 1 Google Maps Platform auth/quota listener
 (window as unknown as { gm_authFailure?: () => void }).gm_authFailure = () => {
   window.dispatchEvent(new CustomEvent('gmp-quota-exceeded'));
 };

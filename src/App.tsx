@@ -1,962 +1,1509 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { APIProvider } from '@vis.gl/react-google-maps';
-import { Bell, Menu, Package, Plus, Search, X } from 'lucide-react';
-import { AdminDashboardView } from './components/AdminDashboardView';
-import { CourierDeviceView } from './components/CourierDeviceView';
-import { CourierMapPanel } from './components/CourierMapPanel';
-import { CustomerTrackerView } from './components/CustomerTrackerView';
-import { LandingView } from './components/LandingView';
-import { NewDeliveryModal } from './components/NewDeliveryModal';
-import { NotificationDrawer } from './components/NotificationDrawer';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  StatusLabel,
-  formatClockTime,
-  formatDistanceKm,
-  formatEtaText,
-  formatPriorityLabel,
-} from './components/StatusLabel';
+  ArrowRight,
+  CheckCircle2,
+  Globe,
+  Menu,
+  Pause,
+  Play,
+  Search,
+  Volume2,
+  VolumeX,
+  X,
+} from 'lucide-react';
+import AdminPortalPage, { type AdminCourier } from './components/AdminPortalPage';
+import TrackParcelPage from './components/TrackParcelPage';
 import {
-  FleetAndTasksView,
-  SelectedParcelOperations,
-} from './components/TaskAndFleetPanel';
-import { useCourierSocket } from './hooks/useCourierSocket';
-import {
-  dispatchDevicePushNotification,
-  loadPushPrefs,
-  registerPushServiceWorker,
-  requestDeviceNotificationPermission,
-  savePushPrefs,
-} from './services/pushNotifications';
-import type {
-  CourierNotification,
-  PushSubscriptionPrefs,
-} from './types/courier';
+  extractWaybillCode,
+  INITIAL_PARCELS,
+  type TrackableParcel,
+} from './data/shipments';
 
-type WorkspaceTab = 'home' | 'dispatch' | 'customer' | 'admin' | 'courier';
-type ParcelFilter =
-  | 'all'
-  | 'active'
-  | 'out_for_delivery'
-  | 'delayed'
-  | 'delivered';
+const PARCELS_STORAGE_KEY = 'gc_parcels_v2';
+const COURIERS_STORAGE_KEY = 'gc_couriers_v1';
 
-interface RouteState {
-  isAdminPortal: boolean;
-  tab: WorkspaceTab;
+const INITIAL_COURIERS: AdminCourier[] = [
+  { id: 'cr-1', name: 'Marcus Vance', hub: 'New York JFK (JFK)', routeCode: 'NY-14' },
+  { id: 'cr-2', name: 'Elena Rostova', hub: 'Singapore Changi (SIN)', routeCode: 'SIN-04' },
+  { id: 'cr-3', name: 'Daniel Okafor', hub: 'Zurich / Toronto (YYZ)', routeCode: 'YYZ-09' },
+];
+
+type RegionKey = 'europe' | 'americas' | 'apac' | 'mena';
+
+interface FilmChapter {
+  id: string;
+  index: string;
+  title: string;
+  location: string;
+  timestampSec: number;
+  summary: string;
 }
 
-function parseRouteFromLocation(): RouteState {
-  if (typeof window === 'undefined') {
-    return { isAdminPortal: false, tab: 'home' };
-  }
-  const path = window.location.pathname.toLowerCase();
-  const hash = window.location.hash.toLowerCase();
-
-  if (path.startsWith('/admin') || hash.startsWith('#/admin') || hash === '#admin') {
-    if (path.startsWith('/admin/dispatch') || hash.includes('/dispatch')) {
-      return { isAdminPortal: true, tab: 'dispatch' };
-    }
-    if (path.startsWith('/admin/courier') || hash.includes('/courier')) {
-      return { isAdminPortal: true, tab: 'courier' };
-    }
-    if (path.startsWith('/admin/customer') || hash.includes('/customer')) {
-      return { isAdminPortal: true, tab: 'customer' };
-    }
-    return { isAdminPortal: true, tab: 'admin' };
-  }
-
-  if (path.startsWith('/track')) {
-    return { isAdminPortal: false, tab: 'customer' };
-  }
-
-  return { isAdminPortal: false, tab: 'home' };
+interface CorridorRegion {
+  key: RegionKey;
+  label: string;
+  primaryHubs: string;
+  transitWindow: string;
+  customsClearance: string;
+  description: string;
+  lanes: { route: string; cadence: string; transit: string }[];
 }
 
-function pathForTab(tab: WorkspaceTab, isAdminPortal: boolean): string {
-  if (isAdminPortal || tab === 'admin' || tab === 'dispatch' || tab === 'courier') {
-    if (tab === 'dispatch') return '/admin/dispatch';
-    if (tab === 'courier') return '/admin/courier';
-    if (tab === 'customer') return '/admin/customer';
-    return '/admin';
-  }
-  if (tab === 'customer') return '/track';
-  return '/';
-}
 
-const ENV_GOOGLE_MAPS_API_KEY =
-  (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined) || '';
+const FILM_CHAPTERS: FilmChapter[] = [
+  {
+    id: 'tarmac',
+    index: '01',
+    title: 'Widebody Air Uplift',
+    location: 'Frankfurt & London Heathrow Hubs',
+    timestampSec: 0,
+    summary:
+      'Dedicated night-freighter capacity moves palletized air containers and priority satchels across major intercontinental runways without commercial passenger holds.',
+  },
+  {
+    id: 'sorting',
+    index: '02',
+    title: 'Automated Hub & Customs Pre-Clearance',
+    location: 'Zurich & Singapore Bonded Terminals',
+    timestampSec: 3.6,
+    summary:
+      'Every parcel is scanned, weighed, and cleared against Harmonized System tariffs digitally while still in transit—eliminating border bottlenecks before wheels touch down.',
+  },
+  {
+    id: 'corridor',
+    index: '03',
+    title: 'Intermodal Sea-Air Consolidation',
+    location: 'Rotterdam, Hong Kong & Jebel Ali',
+    timestampSec: 7.0,
+    summary:
+      'High-volume commercial freight transitions cleanly between ocean terminals and express tarmac corridors for balanced speed and unit cost worldwide.',
+  },
+  {
+    id: 'handoff',
+    index: '04',
+    title: 'Verified Doorstep Handoff',
+    location: '195+ Countries & Territories',
+    timestampSec: 10.4,
+    summary:
+      'Uniformed local couriers complete chain-of-custody delivery directly to studio desks, laboratories, diplomatic offices, and regional distribution centers.',
+  },
+];
+
+const CORRIDOR_REGIONS: Record<RegionKey, CorridorRegion> = {
+  europe: {
+    key: 'europe',
+    label: 'Europe & UK',
+    primaryHubs: 'London Heathrow · Frankfurt · Zurich · Paris CDG',
+    transitWindow: '24–36 Hours',
+    customsClearance: 'Pre-cleared electronic T1/AES filing',
+    description:
+      'Overnight intra-European air shuttles paired with same-morning bonded customs brokerage connecting UK, EU, and Nordic commercial centers.',
+    lanes: [
+      { route: 'London → Zurich / Frankfurt', cadence: '3x Daily Flights', transit: 'Next Morning' },
+      { route: 'Frankfurt → New York JFK', cadence: 'Daily Night Freighter', transit: '24 Hours' },
+      { route: 'Paris → Singapore Changi', cadence: 'Daily Widebody', transit: '36 Hours' },
+    ],
+  },
+  americas: {
+    key: 'americas',
+    label: 'North & South America',
+    primaryHubs: 'New York JFK · Miami · Chicago · Sao Paulo',
+    transitWindow: '24–48 Hours',
+    customsClearance: 'Automated CBP & Mercosur brokerage',
+    description:
+      'Direct transatlantic and pan-American air freight links engineered for aerospace spares, legal filings, and high-value commercial hardware.',
+    lanes: [
+      { route: 'New York → London Heathrow', cadence: '2x Daily Air Uplift', transit: '24 Hours' },
+      { route: 'Miami → Sao Paulo / Santiago', cadence: 'Daily Priority Cargo', transit: '36–48 Hours' },
+      { route: 'Chicago → Tokyo Haneda', cadence: 'Daily Transpacific', transit: '42 Hours' },
+    ],
+  },
+  apac: {
+    key: 'apac',
+    label: 'Asia-Pacific',
+    primaryHubs: 'Singapore · Hong Kong · Tokyo · Sydney',
+    transitWindow: '24–48 Hours',
+    customsClearance: 'Single-window ASEAN & APAC e-manifest',
+    description:
+      'Precision electronics, biotech specimens, and apparel prototypes cleared rapidly across East and Southeast Asia with climate-stabilized holds.',
+    lanes: [
+      { route: 'Singapore → London / Frankfurt', cadence: 'Daily Express', transit: '36 Hours' },
+      { route: 'Hong Kong → Los Angeles LAX', cadence: 'Daily Transpacific', transit: '38 Hours' },
+      { route: 'Tokyo → Sydney Kingsford Smith', cadence: 'Daily Corridor', transit: '24–30 Hours' },
+    ],
+  },
+  mena: {
+    key: 'mena',
+    label: 'Middle East & Africa',
+    primaryHubs: 'Dubai Jebel Ali · Doha · Nairobi · Johannesburg',
+    transitWindow: '36–72 Hours',
+    customsClearance: 'Bonded free-zone & port clearance',
+    description:
+      'Strategic East–West bridge corridors linking Gulf free-zone hubs directly with East, West, and Southern African capital cities.',
+    lanes: [
+      { route: 'Dubai → Johannesburg / Nairobi', cadence: 'Daily Air Shuttle', transit: '36 Hours' },
+      { route: 'Frankfurt → Dubai / Riyadh', cadence: 'Daily Freighter', transit: '24–30 Hours' },
+      { route: 'London → Lagos / Accra', cadence: '5x Weekly Priority', transit: '48 Hours' },
+    ],
+  },
+};
 
 export default function App() {
-  const [mapsApiKey, setMapsApiKey] = useState(ENV_GOOGLE_MAPS_API_KEY);
-  const [configReady, setConfigReady] = useState(Boolean(ENV_GOOGLE_MAPS_API_KEY));
-  const [quotaExceeded, setQuotaExceeded] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isMuted, setIsMuted] = useState(true);
+  const [activeChapterId, setActiveChapterId] = useState<string>('tarmac');
+  const [activeRegion, setActiveRegion] = useState<RegionKey>('europe');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  useEffect(() => {
-    if (ENV_GOOGLE_MAPS_API_KEY) return;
-    fetch('/api/config')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: { googleMapsApiKey?: string } | null) => {
-        if (data?.googleMapsApiKey) {
-          setMapsApiKey(data.googleMapsApiKey);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setConfigReady(true));
-  }, []);
+  const [heroImgFailed, setHeroImgFailed] = useState(false);
+  const [hubImgFailed, setHubImgFailed] = useState(false);
+  const [handoffImgFailed, setHandoffImgFailed] = useState(false);
+  const [corridorImgFailed, setCorridorImgFailed] = useState(false);
 
-  const [route, setRoute] = useState<RouteState>(() => parseRouteFromLocation());
-  const { isAdminPortal, tab: activeTab } = route;
-
-  const navigate = useCallback((nextPath: string, nextRoute?: RouteState) => {
-    if (typeof window !== 'undefined' && window.location.pathname !== nextPath) {
-      window.history.pushState({}, '', nextPath);
+  const getInitialRoute = (): { page: 'home' | 'track' | 'admin'; code?: string } => {
+    if (typeof window === 'undefined') return { page: 'home' };
+    if (window.location.pathname.startsWith('/admin')) {
+      return { page: 'admin' };
     }
-    setRoute(nextRoute ?? parseRouteFromLocation());
-  }, []);
+    const isTrack = window.location.pathname.startsWith('/track');
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code') ?? undefined;
+    return { page: isTrack ? 'track' : 'home', code };
+  };
 
-  const navigateToTab = useCallback(
-    (tab: WorkspaceTab, forceAdminPortal?: boolean) => {
-      const admin =
-        typeof forceAdminPortal === 'boolean'
-          ? forceAdminPortal
-          : tab === 'admin' || tab === 'dispatch' || tab === 'courier'
-          ? true
-          : tab === 'home'
-          ? false
-          : route.isAdminPortal;
-      const targetPath = pathForTab(tab, admin);
-      navigate(targetPath, { isAdminPortal: admin, tab });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    },
-    [navigate, route.isAdminPortal]
-  );
+  const initialRoute = getInitialRoute();
+  const [currentPage, setCurrentPage] = useState<'home' | 'track' | 'admin'>(initialRoute.page);
+  const [trackQueryCode, setTrackQueryCode] = useState<string | undefined>(initialRoute.code);
+  const [quickWaybill, setQuickWaybill] = useState('');
+  const [mapsQuotaExceeded, setMapsQuotaExceeded] = useState(false);
 
-  useEffect(() => {
-    const onPopState = () => {
-      setRoute(parseRouteFromLocation());
-    };
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
-  }, []);
-
-  const handleTrackParcelAction = useCallback(() => {
-    if (isAdminPortal || activeTab !== 'home') {
-      navigate('/', { isAdminPortal: false, tab: 'home' });
-      window.setTimeout(() => {
-        const input = document.getElementById('parcel-lookup-input');
-        const section = document.getElementById('parcel-lookup');
-        section?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        input?.focus();
-      }, 60);
-      return;
+  const [parcels, setParcels] = useState<TrackableParcel[]>(() => {
+    if (typeof window === 'undefined') return INITIAL_PARCELS;
+    try {
+      const saved = window.localStorage.getItem(PARCELS_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as TrackableParcel[];
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // Fallback to default 3 parcels
     }
-    const input = document.getElementById('parcel-lookup-input');
-    const section = document.getElementById('parcel-lookup');
-    section?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    input?.focus();
-  }, [activeTab, isAdminPortal, navigate]);
+    return INITIAL_PARCELS;
+  });
 
-  const [parcelFilter, setParcelFilter] = useState<ParcelFilter>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null);
-  const [isNewModalOpen, setIsNewModalOpen] = useState(false);
-  const [isAlertsOpen, setIsAlertsOpen] = useState(false);
-  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  const [pushPrefs, setPushPrefs] = useState<PushSubscriptionPrefs>(() =>
-    loadPushPrefs()
-  );
-  const [liveToast, setLiveToast] = useState<CourierNotification | null>(null);
-
-  const pushPrefsRef = useRef(pushPrefs);
-  pushPrefsRef.current = pushPrefs;
+  const [couriers, setCouriers] = useState<AdminCourier[]>(() => {
+    if (typeof window === 'undefined') return INITIAL_COURIERS;
+    try {
+      const saved = window.localStorage.getItem(COURIERS_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as AdminCourier[];
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {
+      // Fallback
+    }
+    return INITIAL_COURIERS;
+  });
 
   useEffect(() => {
-    void registerPushServiceWorker();
-  }, []);
+    try {
+      window.localStorage.setItem(PARCELS_STORAGE_KEY, JSON.stringify(parcels));
+    } catch {
+      // Ignore storage failures
+    }
+  }, [parcels]);
 
   useEffect(() => {
-    savePushPrefs(pushPrefs);
-  }, [pushPrefs]);
+    try {
+      window.localStorage.setItem(COURIERS_STORAGE_KEY, JSON.stringify(couriers));
+    } catch {
+      // Ignore storage failures
+    }
+  }, [couriers]);
 
-  // Listen for Google Maps Platform quota exceeded events (Case A Demo Key Handling)
   useEffect(() => {
-    const handleQuotaExceeded = () => {
-      setQuotaExceeded(true);
+    const handlePopState = () => {
+      if (window.location.pathname.startsWith('/admin')) {
+        setCurrentPage('admin');
+        setTrackQueryCode(undefined);
+        return;
+      }
+      const isTrack = window.location.pathname.startsWith('/track');
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code') ?? undefined;
+      setCurrentPage(isTrack ? 'track' : 'home');
+      setTrackQueryCode(code);
     };
-    window.addEventListener('gmp-quota-exceeded', handleQuotaExceeded);
+    const handleQuota = () => setMapsQuotaExceeded(true);
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('gmp-quota-exceeded', handleQuota);
     return () => {
-      window.removeEventListener('gmp-quota-exceeded', handleQuotaExceeded);
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('gmp-quota-exceeded', handleQuota);
     };
   }, []);
 
-  const handleIncomingNotification = useCallback(
-    (notification: CourierNotification) => {
-      setLiveToast(notification);
-      void dispatchDevicePushNotification(notification, pushPrefsRef.current);
-    },
-    []
-  );
+  const navigateToTrack = (code?: string) => {
+    const cleaned = code ? extractWaybillCode(code) : undefined;
+    const targetUrl = cleaned ? `/track?code=${encodeURIComponent(cleaned)}` : '/track';
+    window.history.pushState({}, '', targetUrl);
+    setCurrentPage('track');
+    setTrackQueryCode(cleaned);
+    setMobileMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-  // Auto-dismiss live toast after 5.5s
-  useEffect(() => {
-    if (!liveToast) return;
-    const timer = window.setTimeout(() => setLiveToast(null), 5500);
-    return () => clearTimeout(timer);
-  }, [liveToast]);
+  const navigateToAdmin = () => {
+    window.history.pushState({}, '', '/admin');
+    setCurrentPage('admin');
+    setMobileMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-  const {
-    state,
-    loading,
-    error,
-    connectionStatus,
-    createCourier,
-    deleteCourier,
-    createParcel,
-    updateParcel,
-    deleteParcel,
-    syncParcelRoute,
-    sendCourierTelemetry,
-    triggerTestPushAlert,
-    createTask,
-    toggleTask,
-    markNotificationRead,
-    markAllNotificationsRead,
-  } = useCourierSocket({ onNewNotification: handleIncomingNotification });
+  const syncTrackUrl = (code?: string) => {
+    const cleaned = code ? extractWaybillCode(code) : undefined;
+    const targetUrl = cleaned ? `/track?code=${encodeURIComponent(cleaned)}` : '/track';
+    window.history.replaceState({}, '', targetUrl);
+    setTrackQueryCode(cleaned);
+  };
 
-  useEffect(() => {
-    if (!selectedParcelId && state.parcels.length > 0) {
-      setSelectedParcelId(state.parcels[0].id);
-    }
-  }, [selectedParcelId, state.parcels]);
+  const handleUpdateParcel = (
+    waybill: string,
+    updater: (prev: TrackableParcel) => TrackableParcel
+  ) => {
+    setParcels((prev) => prev.map((p) => (p.waybill === waybill ? updater(p) : p)));
+  };
 
-  const handleToggleDevicePush = async (watchedTrackingCode?: string) => {
-    if (!pushPrefs.enabled) {
-      const permission = await requestDeviceNotificationPermission();
-      const next: PushSubscriptionPrefs = {
-        ...pushPrefs,
-        enabled: permission === 'granted' || typeof Notification === 'undefined',
-        watchedTrackingCode: watchedTrackingCode ?? null,
-      };
-      setPushPrefs(next);
+  const handleAddParcel = (parcel: TrackableParcel) => {
+    setParcels((prev) => [parcel, ...prev.filter((p) => p.waybill !== parcel.waybill)]);
+  };
+
+  const handleDeleteParcel = (waybill: string) => {
+    setParcels((prev) => prev.filter((p) => p.waybill !== waybill));
+  };
+
+  const handleResetParcels = () => {
+    setParcels(INITIAL_PARCELS);
+  };
+
+  const handleAddCourier = (courier: AdminCourier) => {
+    setCouriers((prev) => [...prev, courier]);
+  };
+
+  const handleRemoveCourier = (id: string) => {
+    setCouriers((prev) => prev.filter((c) => c.id !== id));
+  };
+
+  const navigateToHome = (sectionId?: string) => {
+    const targetHash = sectionId ? `/#${sectionId}` : '/';
+    if (currentPage !== 'home') {
+      window.history.pushState({}, '', targetHash);
+      setCurrentPage('home');
+      setMobileMenuOpen(false);
+      window.setTimeout(() => {
+        if (sectionId) {
+          document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 60);
     } else {
-      setPushPrefs({
-        ...pushPrefs,
-        enabled: false,
-        watchedTrackingCode: null,
-      });
+      setMobileMenuOpen(false);
+      if (sectionId) {
+        document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     }
   };
 
-  const filteredParcels = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    return state.parcels.filter((p) => {
-      if (parcelFilter === 'active' && p.status === 'delivered') return false;
-      if (
-        parcelFilter === 'out_for_delivery' &&
-        p.status !== 'out_for_delivery'
-      )
-        return false;
-      if (parcelFilter === 'delayed' && p.status !== 'delayed') return false;
-      if (parcelFilter === 'delivered' && p.status !== 'delivered') return false;
+  // Quote & contact inquiry form state
+  const [originCountry, setOriginCountry] = useState('');
+  const [destinationCountry, setDestinationCountry] = useState('');
+  const [serviceTier, setServiceTier] = useState('Air Express Priority (24–48h)');
+  const [weightKg, setWeightKg] = useState('12');
+  const [contactEmail, setContactEmail] = useState('');
+  const [shipmentNotes, setShipmentNotes] = useState('');
+  const [formError, setFormError] = useState<string | null>(null);
+  const [quoteConfirmation, setQuoteConfirmation] = useState<{
+    reference: string;
+    route: string;
+    tier: string;
+    email: string;
+  } | null>(null);
 
-      if (!q) return true;
-      const courier = state.couriers.find((c) => c.id === p.courierId);
-      return (
-        p.trackingCode.toLowerCase().includes(q) ||
-        p.customerName.toLowerCase().includes(q) ||
-        p.destinationAddress.toLowerCase().includes(q) ||
-        (courier && courier.name.toLowerCase().includes(q))
-      );
+  const handleTogglePlay = () => {
+    const vid = videoRef.current;
+    if (!vid) return;
+    if (vid.paused) {
+      void vid.play();
+      setIsPlaying(true);
+    } else {
+      vid.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const handleToggleMute = () => {
+    const vid = videoRef.current;
+    if (!vid) return;
+    vid.muted = !vid.muted;
+    setIsMuted(vid.muted);
+  };
+
+  const handleSelectChapter = (chapter: FilmChapter) => {
+    setActiveChapterId(chapter.id);
+    const vid = videoRef.current;
+    if (!vid) return;
+    vid.currentTime = chapter.timestampSec;
+    if (vid.paused) {
+      void vid.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    const vid = videoRef.current;
+    if (!vid) return;
+    const t = vid.currentTime;
+    if (t >= 10.0) {
+      setActiveChapterId('handoff');
+    } else if (t >= 6.6) {
+      setActiveChapterId('corridor');
+    } else if (t >= 3.2) {
+      setActiveChapterId('sorting');
+    } else {
+      setActiveChapterId('tarmac');
+    }
+  };
+
+  const handleQuoteSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const o = originCountry.trim();
+    const d = destinationCountry.trim();
+    const em = contactEmail.trim();
+    const w = Number(weightKg);
+
+    if (!o || !d) {
+      setFormError('Please specify both origin and destination countries or cities.');
+      return;
+    }
+    if (!Number.isFinite(w) || w <= 0) {
+      setFormError('Please enter a valid shipment weight in kilograms.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
+      setFormError('Please enter a valid business email address for your rate card.');
+      return;
+    }
+
+    setFormError(null);
+    const refCode = `GLC-${Math.floor(100000 + Math.random() * 899999)}`;
+    setQuoteConfirmation({
+      reference: refCode,
+      route: `${o} → ${d} (${w} kg)`,
+      tier: serviceTier,
+      email: em,
     });
-  }, [state.parcels, state.couriers, parcelFilter, searchQuery]);
+  };
 
-  const selectedParcel =
-    state.parcels.find((p) => p.id === selectedParcelId) ??
-    filteredParcels[0] ??
-    state.parcels[0] ??
-    null;
+  const handleQuickTrackSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleaned = extractWaybillCode(quickWaybill);
+    navigateToTrack(cleaned || undefined);
+  };
 
-  const unreadAlertsCount = state.notifications.filter((n) => !n.read).length;
-  const activeCount = state.parcels.filter((p) => p.status !== 'delivered').length;
-  const delayedCount = state.parcels.filter((p) => p.status === 'delayed').length;
-  const openTaskCount = state.tasks.filter((t) => !t.completed).length;
+  const handleQuickTrackPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pasted = e.clipboardData.getData('text');
+    if (!pasted) return;
+    const cleaned = extractWaybillCode(pasted);
+    if (cleaned) {
+      e.preventDefault();
+      setQuickWaybill(cleaned);
+      navigateToTrack(cleaned);
+    }
+  };
 
-  const avgEtaMinutes = useMemo(() => {
-    const active = state.parcels.filter(
-      (p) => p.status !== 'delivered' && p.etaSeconds > 0
-    );
-    if (active.length === 0) return 0;
-    const total = active.reduce((acc, p) => acc + p.etaSeconds, 0);
-    return Math.round(total / active.length / 60);
-  }, [state.parcels]);
-
-  if (!configReady) {
-    return (
-      <div className="min-h-screen bg-[#FFF9F0] flex items-center justify-center text-sm text-[#6F4E37]">
-        Initializing dispatch workspace...
-      </div>
-    );
-  }
+  const currentRegion = CORRIDOR_REGIONS[activeRegion];
 
   return (
-    <APIProvider
-      apiKey={mapsApiKey}
-      libraries={['places', 'routes', 'marker']}
-      language="en"
-      region="US"
-    >
-      <div className="min-h-screen flex flex-col bg-[#FFF9F0] text-[#3B2A1F]">
-        {/* Case A Required Quota Banner */}
-        {quotaExceeded && (
-          <div className="bg-amber-50 border-b border-amber-200 text-amber-900 px-4 py-2.5 text-xs md:text-sm text-center sticky top-0 z-50 shadow-sm">
-            <span>
-              Google Maps Platform quota reached. If you are the app owner, visit{' '}
-              <a
-                href="https://developers.google.com/maps/ai/ai-studio?utm_campaign=gmp_mcp_codeassist_v1_aistudio#quota_exceeded_errors"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline font-semibold text-amber-950 hover:text-amber-800"
-              >
-                maps developer site
-              </a>{' '}
-              for instructions to update your account.
-            </span>
-          </div>
-        )}
-
-        {/* Header: Public pages show ONLY Company Name + Track Parcel; Admin Portal (/admin) hosts operational navigation separately */}
-        {!isAdminPortal ? (
-          <header className="sticky top-0 z-40 h-14 bg-[#EDE3D4]/95 backdrop-blur-sm border-b border-[#D4B996] px-4 sm:px-6 flex items-center justify-between gap-6">
+    <div className="min-h-screen bg-[#375534] text-[#E3EED4] flex flex-col">
+      {mapsQuotaExceeded && (
+        <div className="bg-amber-50 border-b border-amber-200 text-amber-900 px-4 py-2.5 text-xs md:text-sm text-center sticky top-0 z-50 shadow-sm">
+          <span>
+            Google Maps Platform quota reached. If you are the app owner, visit{' '}
             <a
-              href="/"
+              href="https://developers.google.com/maps/ai/ai-studio?utm_campaign=gmp_mcp_codeassist_v1_aistudio#quota_exceeded_errors"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline font-semibold text-amber-950 hover:text-amber-800"
+            >
+              maps developer site
+            </a>{' '}
+            for instructions to update your account.
+          </span>
+        </div>
+      )}
+      {/* Top Bar Contract: 1-row, 3-zone header separated by gap-8 */}
+      <header className="sticky top-0 z-40 h-16 bg-[#0F2A1D]/90 backdrop-blur-md border-b border-[#6B9071]/35 px-4 sm:px-8 flex items-center justify-between gap-8">
+        {/* Zone 1: Single text element wordmark */}
+        <a
+          href="/"
+          onClick={(e) => {
+            e.preventDefault();
+            navigateToHome();
+          }}
+          className="text-lg font-bold tracking-tight text-[#E3EED4] whitespace-nowrap shrink-0"
+        >
+          Global Courier
+        </a>
+
+        {/* Zone 2: 5 concise single-line navigation links */}
+        <nav
+          aria-label="Primary navigation"
+          className="hidden md:flex items-center gap-6 text-sm font-medium text-[#AEC3B0]"
+        >
+          <a
+            href="/#about"
+            onClick={(e) => {
+              e.preventDefault();
+              navigateToHome('about');
+            }}
+            className="hover:text-[#E3EED4] transition-colors whitespace-nowrap shrink-0"
+          >
+            About Us
+          </a>
+          <a
+            href="/#services"
+            onClick={(e) => {
+              e.preventDefault();
+              navigateToHome('services');
+            }}
+            className="hover:text-[#E3EED4] transition-colors whitespace-nowrap shrink-0"
+          >
+            Services
+          </a>
+          <a
+            href="/#network"
+            onClick={(e) => {
+              e.preventDefault();
+              navigateToHome('network');
+            }}
+            className="hover:text-[#E3EED4] transition-colors whitespace-nowrap shrink-0"
+          >
+            Global Network
+          </a>
+          <a
+            href="/track"
+            onClick={(e) => {
+              e.preventDefault();
+              navigateToTrack(trackQueryCode);
+            }}
+            aria-current={currentPage === 'track' ? 'page' : undefined}
+            className={`transition-colors whitespace-nowrap shrink-0 ${
+              currentPage === 'track'
+                ? 'text-[#E3EED4] underline decoration-[#E3EED4]/70 underline-offset-4'
+                : 'hover:text-[#E3EED4]'
+            }`}
+          >
+            Track Parcel
+          </a>
+          <a
+            href="/#contact"
+            onClick={(e) => {
+              e.preventDefault();
+              navigateToHome('contact');
+            }}
+            className="hover:text-[#E3EED4] transition-colors whitespace-nowrap shrink-0"
+          >
+            Contact Us
+          </a>
+        </nav>
+
+        {/* Zone 3: 1 primary action */}
+        <div className="flex items-center gap-3 shrink-0">
+          <a
+            href="/#quote"
+            onClick={(e) => {
+              e.preventDefault();
+              navigateToHome('quote');
+            }}
+            className="px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-[#E3EED4] text-[#0F2A1D] hover:bg-[#AEC3B0] transition-colors whitespace-nowrap shrink-0"
+          >
+            Request Quote
+          </a>
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((v) => !v)}
+            aria-label="Toggle navigation menu"
+            className="md:hidden p-2 rounded-lg text-[#E3EED4] hover:bg-[#375534] min-h-[40px] min-w-[40px] flex items-center justify-center"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
+      </header>
+
+      {/* Mobile Navigation Drawer */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-[#0F2A1D] border-b border-[#6B9071]/35 px-4 py-3 flex flex-col gap-1">
+          <button
+            type="button"
+            onClick={() => navigateToHome('about')}
+            className="text-left px-3 py-2.5 rounded-lg text-sm font-medium text-[#E3EED4] hover:bg-[#375534] transition-colors"
+          >
+            About Us
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateToHome('services')}
+            className="text-left px-3 py-2.5 rounded-lg text-sm font-medium text-[#E3EED4] hover:bg-[#375534] transition-colors"
+          >
+            Services
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateToHome('network')}
+            className="text-left px-3 py-2.5 rounded-lg text-sm font-medium text-[#E3EED4] hover:bg-[#375534] transition-colors"
+          >
+            Global Network
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateToTrack(trackQueryCode)}
+            className="text-left px-3 py-2.5 rounded-lg text-sm font-medium text-[#E3EED4] hover:bg-[#375534] transition-colors"
+          >
+            Track Parcel
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateToHome('contact')}
+            className="text-left px-3 py-2.5 rounded-lg text-sm font-medium text-[#E3EED4] hover:bg-[#375534] transition-colors"
+          >
+            Contact Us
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateToHome('quote')}
+            className="text-left px-3 py-2.5 rounded-lg text-sm font-medium text-[#E3EED4] hover:bg-[#375534] transition-colors"
+          >
+            Request Quote
+          </button>
+          <button
+            type="button"
+            onClick={() => navigateToAdmin()}
+            className="text-left px-3 py-2.5 rounded-lg text-sm font-medium text-[#AEC3B0] hover:bg-[#375534] hover:text-[#E3EED4] transition-colors"
+          >
+            Admin Portal
+          </button>
+        </div>
+      )}
+
+      {currentPage === 'admin' ? (
+        <AdminPortalPage
+          parcels={parcels}
+          couriers={couriers}
+          onUpdateParcel={handleUpdateParcel}
+          onAddParcel={handleAddParcel}
+          onDeleteParcel={handleDeleteParcel}
+          onResetParcels={handleResetParcels}
+          onAddCourier={handleAddCourier}
+          onRemoveCourier={handleRemoveCourier}
+          onNavigateHome={navigateToHome}
+          onNavigateTrack={navigateToTrack}
+        />
+      ) : currentPage === 'track' ? (
+        <TrackParcelPage
+          parcels={parcels}
+          initialCode={trackQueryCode}
+          onNavigateHome={navigateToHome}
+          onSyncWaybillUrl={syncTrackUrl}
+        />
+      ) : (
+        /* Main Editorial Content */
+        <main className="flex-1 w-full max-w-[1280px] mx-auto px-4 sm:px-8 py-10 sm:py-14 space-y-20">
+        {/* 1. HERO / PROPOSITION */}
+        <section id="overview" className="space-y-8 scroll-mt-24">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-stretch">
+            {/* Left Copy Column */}
+            <div className="lg:col-span-6 flex flex-col justify-between py-1 space-y-6">
+              <div className="space-y-5">
+                <p className="text-xs font-medium tracking-wide text-[#AEC3B0]">
+                  International Express Courier · 195+ Countries &amp; Territories
+                </p>
+                <h1
+                  className="font-bold tracking-tight text-[#E3EED4] leading-[1.07]"
+                  style={{
+                    fontSize: 'clamp(2.25rem, 4vw, 3.6rem)',
+                    textWrap: 'balance',
+                  }}
+                >
+                  Express cargo across every border, delivered door to door.
+                </h1>
+                <p className="text-base text-[#E3EED4]/90 leading-relaxed max-w-xl tracking-[0.005em]">
+                  Global Courier operates dedicated widebody air corridors, bonded
+                  customs terminals, and final-mile courier fleets connecting commercial
+                  capitals across Europe, the Americas, Asia-Pacific, the Middle East,
+                  and Africa. From time-critical legal dossiers to multi-pallet hardware
+                  freight, every consignment moves on verified schedules with direct
+                  chain-of-custody accountability.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-5 pt-2">
+                <a
+                  href="#quote"
+                  className="inline-flex items-center gap-2 px-5 py-3 text-sm font-semibold rounded-lg bg-[#E3EED4] text-[#0F2A1D] hover:bg-[#AEC3B0] transition-colors whitespace-nowrap shrink-0"
+                >
+                  <span>Request International Quote</span>
+                  <ArrowRight className="w-4 h-4" />
+                </a>
+                <a
+                  href="#film"
+                  className="text-sm font-medium text-[#E3EED4] underline decoration-[#AEC3B0]/60 underline-offset-4 hover:text-[#AEC3B0] transition-colors whitespace-nowrap shrink-0"
+                >
+                  Watch Worldwide Film
+                </a>
+              </div>
+            </div>
+
+            {/* Right Dominant Hero Visual */}
+            <div className="lg:col-span-6 relative rounded-xl overflow-hidden border border-[#6B9071]/45 bg-[#0F2A1D] min-h-[300px] lg:min-h-[440px]">
+              {!heroImgFailed ? (
+                <img
+                  src="/src/assets/images/hero_global_air_courier_1795093406333.jpg"
+                  alt="Global Courier widebody international air freighter and green express courier vans staged on airport tarmac"
+                  referrerPolicy="no-referrer"
+                  onError={() => setHeroImgFailed(true)}
+                  className="w-full h-full object-cover lg:h-full"
+                />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-[#0F2A1D]">
+                  <Globe className="w-10 h-10 text-[#AEC3B0] mb-3" />
+                  <p className="text-sm font-semibold text-[#E3EED4]">
+                    Global Air Express &amp; Intercontinental Fleet
+                  </p>
+                </div>
+              )}
+              <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6 bg-gradient-to-t from-[#0F2A1D]/95 via-[#0F2A1D]/55 to-transparent">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#E3EED4]">
+                  <span>Dedicated Air Fleet · Nightly Intercontinental Uplift</span>
+                  <span className="font-mono text-[#AEC3B0] tabular-nums">
+                    LHR · FRA · SIN · JFK · DXB
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Full-Width 4-Column Quantitative Proof Bar */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-[#6B9071]/35 rounded-xl bg-[#0F2A1D] border border-[#6B9071]/45 overflow-hidden">
+            {[
+              { value: '195+', label: 'Countries & Territories Served' },
+              { value: '24–48h', label: 'Major Global Hub Transit' },
+              { value: '99.4%', label: 'First-Pass Customs Clearance' },
+              { value: '6 Hubs', label: 'Bonded Intercontinental Gateways' },
+            ].map((item) => (
+              <div key={item.label} className="p-5 sm:p-6">
+                <div className="font-mono text-2xl sm:text-3xl font-bold text-[#E3EED4] tabular-nums">
+                  {item.value}
+                </div>
+                <div className="text-xs sm:text-sm text-[#AEC3B0] mt-1">
+                  {item.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* COMPACT WAYBILL LAUNCHER TO DEDICATED /track PAGE */}
+        <section
+          aria-label="Quick parcel tracking"
+          className="rounded-xl bg-[#0F2A1D] border border-[#6B9071]/45 p-6 sm:p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6"
+        >
+          <div className="space-y-1.5 max-w-xl">
+            <p className="text-xs font-medium text-[#AEC3B0]">
+              Dedicated Tracking Portal
+            </p>
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#E3EED4]">
+              Paste your waybill code to open full parcel details, map &amp; history.
+            </h2>
+            <p className="text-xs sm:text-sm text-[#AEC3B0]">
+              View live shipment position, turn-by-turn delivery directions, customs status,
+              and complete custody records.
+            </p>
+          </div>
+
+          <form onSubmit={handleQuickTrackSubmit} className="flex flex-col sm:flex-row gap-2.5 lg:w-[460px] shrink-0">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-[#AEC3B0] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                value={quickWaybill}
+                onChange={(e) => setQuickWaybill(e.target.value)}
+                onPaste={handleQuickTrackPaste}
+                placeholder="Paste tracking code"
+                aria-label="Quick parcel waybill lookup"
+                className="w-full pl-10 pr-3.5 py-2.5 text-sm font-mono rounded-lg bg-[#375534] border border-[#6B9071]/60 text-[#E3EED4] placeholder:text-[#AEC3B0]/65 focus:outline-none focus:border-[#E3EED4]"
+              />
+            </div>
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#E3EED4] text-[#0F2A1D] hover:bg-[#AEC3B0] transition-colors whitespace-nowrap shrink-0"
+            >
+              <span>Track Parcel</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </form>
+        </section>
+
+        {/* ABOUT US SECTION */}
+        <section id="about" className="space-y-8 scroll-mt-24">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div className="lg:col-span-6 space-y-4">
+              <p className="text-xs font-medium text-[#AEC3B0]">
+                About Global Courier
+              </p>
+              <h2
+                className="text-2xl sm:text-3xl font-bold tracking-tight text-[#E3EED4]"
+                style={{ textWrap: 'balance' }}
+              >
+                An independent international carrier built around border reliability.
+              </h2>
+              <p className="text-sm sm:text-base text-[#E3EED4]/90 leading-relaxed">
+                Founded to give commercial exporters, design houses, legal practices, and
+                medical laboratories direct control over cross-border freight, Global
+                Courier bridges six bonded airport terminals with local courier teams on
+                five continents. Rather than handing consignments across disconnected
+                regional brokers, our dispatchers own every scan from origin collection to
+                signed international handoff.
+              </p>
+            </div>
+
+            <div className="lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[
+                {
+                  index: '01',
+                  title: 'In-House Customs Brokerage',
+                  text: 'Licensed trade compliance officers verify tariff codes, commercial invoices, and bonded transit paperwork before flights depart.',
+                },
+                {
+                  index: '02',
+                  title: 'Dedicated Charter Uplift',
+                  text: 'Reserved widebody cargo allocations guarantee space on nightly trunk routes even during peak seasonal shipping windows.',
+                },
+                {
+                  index: '03',
+                  title: 'Single Chain of Custody',
+                  text: 'Every satchel and pallet carries continuous barcoded custody handoffs without transferring to unverified third-party lockers.',
+                },
+                {
+                  index: '04',
+                  title: '24/7 Multilingual Dispatch',
+                  text: 'Routing desks in London, New York, Frankfurt, and Singapore coordinate customs exceptions and urgent schedule changes in real time.',
+                },
+              ].map((item) => (
+                <div
+                  key={item.index}
+                  className="p-5 rounded-xl bg-[#0F2A1D] border border-[#6B9071]/40 space-y-2"
+                >
+                  <div className="font-mono text-xs font-semibold text-[#AEC3B0]">
+                    {item.index}
+                  </div>
+                  <h3 className="text-base font-semibold text-[#E3EED4]">
+                    {item.title}
+                  </h3>
+                  <p className="text-xs text-[#E3EED4]/85 leading-relaxed">
+                    {item.text}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* 2. GLOBAL OPERATIONS VIDEO & EDITORIAL WRITEUP */}
+        <section id="film" className="space-y-8 scroll-mt-24">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#6B9071]/35 pb-5">
+            <div className="space-y-2 max-w-2xl">
+              <p className="text-xs font-medium text-[#AEC3B0]">
+                Worldwide Operations Reel
+              </p>
+              <h2
+                className="text-2xl sm:text-3xl font-bold tracking-tight text-[#E3EED4]"
+                style={{ textWrap: 'balance' }}
+              >
+                Inside our cross-border air, port, and doorstep network.
+              </h2>
+            </div>
+            <p className="text-sm text-[#AEC3B0] max-w-md leading-relaxed">
+              Watch how a priority international parcel moves from departure tarmac
+              loading through bonded customs inspection to final recipient signature.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+            {/* HTML5 Video Player Container */}
+            <div className="lg:col-span-7 rounded-xl overflow-hidden border border-[#6B9071]/45 bg-[#0F2A1D] flex flex-col">
+              <div className="relative aspect-video bg-[#0F2A1D]">
+                <video
+                  ref={videoRef}
+                  src="/assets/worldwide_courier_reel.mp4"
+                  poster="/src/assets/images/hero_global_air_courier_1795093406333.jpg"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  controls
+                  onTimeUpdate={handleTimeUpdate}
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                  className="w-full h-full object-cover"
+                >
+                  Your browser does not support embedded MP4 playback.
+                </video>
+              </div>
+
+              <div className="p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 border-t border-[#6B9071]/35 bg-[#0F2A1D]">
+                <div className="text-xs text-[#AEC3B0]">
+                  <span className="font-semibold text-[#E3EED4]">
+                    Global Corridor Film
+                  </span>
+                  <span className="mx-2" aria-hidden="true">
+                    ·
+                  </span>
+                  <span>Air Freight · Customs Hub · Last-Mile Delivery</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleTogglePlay}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-[#6B9071]/60 text-[#E3EED4] hover:bg-[#375534] transition-colors"
+                  >
+                    {isPlaying ? (
+                      <>
+                        <Pause className="w-3.5 h-3.5" />
+                        <span>Pause</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-3.5 h-3.5" />
+                        <span>Play</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleToggleMute}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-[#6B9071]/60 text-[#E3EED4] hover:bg-[#375534] transition-colors"
+                  >
+                    {isMuted ? (
+                      <>
+                        <VolumeX className="w-3.5 h-3.5" />
+                        <span>Muted</span>
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 className="w-3.5 h-3.5" />
+                        <span>Sound On</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Interactive Chapter Writeups */}
+            <div className="lg:col-span-5 flex flex-col justify-between gap-3">
+              {FILM_CHAPTERS.map((chapter) => {
+                const isActive = activeChapterId === chapter.id;
+                return (
+                  <button
+                    key={chapter.id}
+                    type="button"
+                    onClick={() => handleSelectChapter(chapter)}
+                    className={`w-full text-left p-5 rounded-xl border transition-colors ${
+                      isActive
+                        ? 'bg-[#0F2A1D] border-[#E3EED4]/70'
+                        : 'bg-[#0F2A1D]/55 border-[#6B9071]/40 hover:bg-[#0F2A1D]/85'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3 text-xs text-[#AEC3B0]">
+                      <span className="font-mono font-semibold text-[#E3EED4]">
+                        {chapter.index}. {chapter.title}
+                      </span>
+                      <span className="truncate">{chapter.location}</span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-[#E3EED4]/85 mt-2 leading-relaxed">
+                      {chapter.summary}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* 3. WORLDWIDE SERVICES & EDITORIAL PHOTOGRAPHY */}
+        <section id="services" className="space-y-8 scroll-mt-24">
+          <div className="space-y-2 max-w-2xl border-b border-[#6B9071]/35 pb-5">
+            <p className="text-xs font-medium text-[#AEC3B0]">
+              Core International Capabilities
+            </p>
+            <h2
+              className="text-2xl sm:text-3xl font-bold tracking-tight text-[#E3EED4]"
+              style={{ textWrap: 'balance' }}
+            >
+              Built for border velocity, regulatory clarity, and fragile cargo.
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+            {/* 01. Customs & Automated Sorting (7 cols) */}
+            <article className="lg:col-span-7 rounded-xl overflow-hidden border border-[#6B9071]/45 bg-[#0F2A1D] flex flex-col">
+              <div className="aspect-[16/10] overflow-hidden bg-[#0F2A1D]">
+                {!hubImgFailed ? (
+                  <img
+                    src="/src/assets/images/customs_hub_sorting_1795093406671.jpg"
+                    alt="Automated international courier sorting facility and customs clearance floor"
+                    referrerPolicy="no-referrer"
+                    onError={() => setHubImgFailed(true)}
+                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-[1.02]"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-[#0F2A1D] text-xs text-[#AEC3B0]">
+                    Automated Customs Hub
+                  </div>
+                )}
+              </div>
+              <div className="p-6 sm:p-7 flex-1 flex flex-col justify-between space-y-4">
+                <div className="space-y-2.5">
+                  <div className="text-xs text-[#AEC3B0]">
+                    Bonded Clearing · HS-Code Validation · Zero Paperwork Delays
+                  </div>
+                  <h3 className="text-xl font-semibold text-[#E3EED4]">
+                    01. Pre-Cleared International Express &amp; Customs Brokerage
+                  </h3>
+                  <p className="text-sm text-[#E3EED4]/85 leading-relaxed">
+                    International delays rarely happen in the air—they happen at customs
+                    desks. Our licensed brokerage specialists validate commercial invoices,
+                    origin certificates, and Harmonized System duty schedules prior to
+                    aircraft departure, allowing high-priority parcels to clear international
+                    gates within minutes of arrival.
+                  </p>
+                </div>
+                <div className="pt-4 border-t border-[#6B9071]/30 flex flex-wrap items-center justify-between gap-2 text-xs text-[#AEC3B0] font-mono tabular-nums">
+                  <span>DDP &amp; DDU Trade Terms Supported</span>
+                  <span>24/7 Bonded Hub Processing</span>
+                </div>
+              </div>
+            </article>
+
+            {/* 02. Executive & Diplomatic Doorstep Delivery (5 cols) */}
+            <article className="lg:col-span-5 rounded-xl overflow-hidden border border-[#6B9071]/45 bg-[#0F2A1D] flex flex-col">
+              <div className="aspect-[4/3] overflow-hidden bg-[#0F2A1D]">
+                {!handoffImgFailed ? (
+                  <img
+                    src="/src/assets/images/courier_global_handoff_1795093407503.jpg"
+                    alt="Global Courier uniformed international courier completing signature handoff in London"
+                    referrerPolicy="no-referrer"
+                    onError={() => setHandoffImgFailed(true)}
+                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-[1.02]"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-[#0F2A1D] text-xs text-[#AEC3B0]">
+                    Doorstep Signature Delivery
+                  </div>
+                )}
+              </div>
+              <div className="p-6 sm:p-7 flex-1 flex flex-col justify-between space-y-4">
+                <div className="space-y-2.5">
+                  <div className="text-xs text-[#AEC3B0]">
+                    Hand-Carry · Architectural &amp; Legal · Named Recipient
+                  </div>
+                  <h3 className="text-xl font-semibold text-[#E3EED4]">
+                    02. White-Glove Doorstep &amp; Diplomatic Handoff
+                  </h3>
+                  <p className="text-sm text-[#E3EED4]/85 leading-relaxed">
+                    Sensitive contracts, luxury retail allocations, and engineering prototypes
+                    never pass into unverified third-party lockers. Our dedicated courier
+                    personnel collect verifiable digital signatures and photographic chain-of-custody
+                    records across 420+ metropolitan centers.
+                  </p>
+                </div>
+                <div className="pt-4 border-t border-[#6B9071]/30 flex items-center justify-between text-xs text-[#AEC3B0] font-mono tabular-nums">
+                  <span>Named-Signer Verification</span>
+                  <span>Tamper-Evident Seals</span>
+                </div>
+              </div>
+            </article>
+
+            {/* 03. Full-Width Intermodal Air-Sea & Cold Chain Feature (12 cols) */}
+            <article className="lg:col-span-12 rounded-xl overflow-hidden border border-[#6B9071]/45 bg-[#0F2A1D] grid grid-cols-1 lg:grid-cols-12 items-stretch">
+              <div className="lg:col-span-6 min-h-[260px] overflow-hidden bg-[#0F2A1D]">
+                {!corridorImgFailed ? (
+                  <img
+                    src="/src/assets/images/maritime_air_corridor_1795093406240.jpg"
+                    alt="International deep-water port and airport cargo interchange at twilight"
+                    referrerPolicy="no-referrer"
+                    onError={() => setCorridorImgFailed(true)}
+                    className="w-full h-full object-cover lg:h-full transition-transform duration-300 hover:scale-[1.02]"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-[#0F2A1D] text-xs text-[#AEC3B0]">
+                    Intermodal Global Freight Corridor
+                  </div>
+                )}
+              </div>
+              <div className="lg:col-span-6 p-6 sm:p-8 flex flex-col justify-between space-y-6">
+                <div className="space-y-3">
+                  <div className="text-xs text-[#AEC3B0]">
+                    Cold-Chain +2°C to +8°C · Heavy Pallet Freight · Scheduled Lanes
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-semibold text-[#E3EED4]">
+                    03. Intermodal Air-Sea Corridors &amp; Cold-Chain Freight
+                  </h3>
+                  <p className="text-sm text-[#E3EED4]/85 leading-relaxed">
+                    When businesses scale beyond single parcels into recurring international
+                    inventory replenishment, Global Courier synchronizes ocean-port consolidation
+                    with priority air bridges. Medical reagents, clinical diagnostics, and
+                    precision components travel in active thermal enclosures monitored continuously
+                    from origin warehouse to overseas hospital or factory floor.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-[#6B9071]/30">
+                  <div>
+                    <div className="font-mono text-lg font-bold text-[#E3EED4] tabular-nums">
+                      +2° / +8°C
+                    </div>
+                    <div className="text-xs text-[#AEC3B0]">Validated Cold Holds</div>
+                  </div>
+                  <div>
+                    <div className="font-mono text-lg font-bold text-[#E3EED4] tabular-nums">
+                      2,500 kg
+                    </div>
+                    <div className="text-xs text-[#AEC3B0]">Max Pallet Uplift</div>
+                  </div>
+                  <div>
+                    <div className="font-mono text-lg font-bold text-[#E3EED4] tabular-nums">
+                      100%
+                    </div>
+                    <div className="text-xs text-[#AEC3B0]">Carbon Offset Program</div>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        {/* 4. GLOBAL NETWORK CORRIDORS & CLIENT PROOF */}
+        <section id="network" className="space-y-10 scroll-mt-24">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-[#6B9071]/35 pb-5">
+            <div className="space-y-2 max-w-2xl">
+              <p className="text-xs font-medium text-[#AEC3B0]">
+                Regional Transit Schedules
+              </p>
+              <h2
+                className="text-2xl sm:text-3xl font-bold tracking-tight text-[#E3EED4]"
+                style={{ textWrap: 'balance' }}
+              >
+                Direct global lanes operating on fixed departure clocks.
+              </h2>
+            </div>
+
+            {/* Interactive Corridor Region Tabs */}
+            <div
+              role="tablist"
+              aria-label="Global shipping regions"
+              className="flex flex-wrap items-center gap-1 p-1 rounded-lg bg-[#0F2A1D] border border-[#6B9071]/40"
+            >
+              {(Object.keys(CORRIDOR_REGIONS) as RegionKey[]).map((key) => {
+                const region = CORRIDOR_REGIONS[key];
+                const active = activeRegion === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setActiveRegion(key)}
+                    className={`px-3.5 py-2 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 ${
+                      active
+                        ? 'bg-[#E3EED4] text-[#0F2A1D]'
+                        : 'text-[#AEC3B0] hover:text-[#E3EED4]'
+                    }`}
+                  >
+                    {region.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="rounded-xl bg-[#0F2A1D] border border-[#6B9071]/45 p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-5 space-y-4">
+              <h3 className="text-xl font-bold text-[#E3EED4]">
+                {currentRegion.label} Corridor Operations
+              </h3>
+              <p className="text-sm text-[#E3EED4]/85 leading-relaxed">
+                {currentRegion.description}
+              </p>
+              <dl className="space-y-3 pt-2 text-xs">
+                <div>
+                  <dt className="text-[#AEC3B0]">Primary Gateways</dt>
+                  <dd className="text-[#E3EED4] font-medium mt-0.5">
+                    {currentRegion.primaryHubs}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[#AEC3B0]">Door-to-Door Window</dt>
+                  <dd className="font-mono text-[#E3EED4] font-semibold mt-0.5 tabular-nums">
+                    {currentRegion.transitWindow}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[#AEC3B0]">Customs Protocol</dt>
+                  <dd className="text-[#E3EED4] font-medium mt-0.5">
+                    {currentRegion.customsClearance}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
+            <div className="lg:col-span-7 divide-y divide-[#6B9071]/30">
+              {currentRegion.lanes.map((lane) => (
+                <div
+                  key={lane.route}
+                  className="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                >
+                  <div>
+                    <div className="text-sm font-semibold text-[#E3EED4]">
+                      {lane.route}
+                    </div>
+                    <div className="text-xs text-[#AEC3B0] mt-0.5">
+                      {lane.cadence}
+                    </div>
+                  </div>
+                  <div className="font-mono text-xs sm:text-sm font-semibold text-[#E3EED4] tabular-nums shrink-0">
+                    {lane.transit}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Client Proof / Testimonials Adjacent to Network Claims */}
+          <div id="proof" className="grid grid-cols-1 md:grid-cols-2 gap-6 scroll-mt-24">
+            <blockquote className="p-6 sm:p-7 rounded-xl bg-[#0F2A1D] border border-[#6B9071]/40 flex flex-col justify-between space-y-5">
+              <p className="text-sm sm:text-base text-[#E3EED4]/90 leading-relaxed">
+                &ldquo;Moving seasonal hardware samples from Shenzhen to retail studios in
+                London and Paris used to stall for four days at customs. With Global
+                Courier&rsquo;s pre-cleared air corridors, our clearance release dropped by
+                38% and every showroom launch hit its morning window.&rdquo;
+              </p>
+              <footer className="pt-4 border-t border-[#6B9071]/30 text-xs">
+                <div className="font-semibold text-[#E3EED4]">Henrik Lindholm</div>
+                <div className="text-[#AEC3B0] mt-0.5">
+                  VP Global Logistics, Nordholm Acoustics · Stockholm &amp; London
+                </div>
+              </footer>
+            </blockquote>
+
+            <blockquote className="p-6 sm:p-7 rounded-xl bg-[#0F2A1D] border border-[#6B9071]/40 flex flex-col justify-between space-y-5">
+              <p className="text-sm sm:text-base text-[#E3EED4]/90 leading-relaxed">
+                &ldquo;Our clinical diagnostic kits require strict +2°C to +8°C continuity
+                between Zurich, Singapore, and Toronto. Over 18 months and 1,400+ cross-border
+                consignments, Global Courier maintained 99.7% on-schedule arrival with zero
+                thermal excursions.&rdquo;
+              </p>
+              <footer className="pt-4 border-t border-[#6B9071]/30 text-xs">
+                <div className="font-semibold text-[#E3EED4]">Dr. Amara Osei-Mensah</div>
+                <div className="text-[#AEC3B0] mt-0.5">
+                  Director of Supply Operations, Helvetia BioSystems · Zurich
+                </div>
+              </footer>
+            </blockquote>
+          </div>
+        </section>
+
+        {/* 5. CONTACT US & INTERNATIONAL QUOTE DESK */}
+        <section
+          id="contact"
+          className="rounded-xl bg-[#0F2A1D] border border-[#6B9071]/45 p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start scroll-mt-24"
+        >
+          <div id="quote" className="lg:col-span-5 space-y-4 scroll-mt-24">
+            <p className="text-xs font-medium text-[#AEC3B0]">
+              Contact Us · International Dispatch Desks
+            </p>
+            <h2
+              className="text-2xl sm:text-3xl font-bold tracking-tight text-[#E3EED4]"
+              style={{ textWrap: 'balance' }}
+            >
+              Speak with our global routing team or request a rate card.
+            </h2>
+            <p className="text-sm text-[#E3EED4]/85 leading-relaxed">
+              Reach our regional operations desks directly or share your origin,
+              destination, and shipment weight. We respond with exact flight-window
+              options, inclusive customs brokerage fees, and door-to-door transit
+              commitments.
+            </p>
+            <div className="pt-2 space-y-2 text-xs text-[#AEC3B0] border-t border-[#6B9071]/30">
+              <div className="text-[#E3EED4] font-medium">
+                Email: dispatch@globalcourier.com
+              </div>
+              <div>London Hub: 14 Cargo Terminal Rd, Heathrow · +44 20 7946 0821</div>
+              <div>New York Hub: JFK Building 78, Jamaica, NY · +1 212 555 0148</div>
+              <div>Singapore Hub: 9 Airline Rd, Changi · +65 6555 0194</div>
+            </div>
+          </div>
+
+          <div className="lg:col-span-7">
+            {quoteConfirmation ? (
+              <div className="p-6 rounded-xl bg-[#375534] border border-[#6B9071] space-y-4">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-[#E3EED4] shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <h3 className="text-base font-semibold text-[#E3EED4]">
+                      International Rate Inquiry Logged ({quoteConfirmation.reference})
+                    </h3>
+                    <p className="text-sm text-[#E3EED4]/90">
+                      Corridor: {quoteConfirmation.route} · {quoteConfirmation.tier}
+                    </p>
+                    <p className="text-xs text-[#AEC3B0]">
+                      Our cross-border routing desk has queued your commercial rate card and
+                      HS-code pre-clearance instructions for {quoteConfirmation.email}.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuoteConfirmation(null);
+                    setOriginCountry('');
+                    setDestinationCountry('');
+                    setShipmentNotes('');
+                  }}
+                  className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#E3EED4] text-[#0F2A1D] hover:bg-[#AEC3B0] transition-colors"
+                >
+                  Submit Another Route
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleQuoteSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="origin-country"
+                      className="block text-xs font-medium text-[#AEC3B0] mb-1.5"
+                    >
+                      Origin City / Country
+                    </label>
+                    <input
+                      id="origin-country"
+                      type="text"
+                      value={originCountry}
+                      onChange={(e) => setOriginCountry(e.target.value)}
+                      placeholder="e.g. London, United Kingdom"
+                      className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-[#375534] border border-[#6B9071]/60 text-[#E3EED4] placeholder:text-[#AEC3B0]/65 focus:outline-none focus:border-[#E3EED4]"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="dest-country"
+                      className="block text-xs font-medium text-[#AEC3B0] mb-1.5"
+                    >
+                      Destination City / Country
+                    </label>
+                    <input
+                      id="dest-country"
+                      type="text"
+                      value={destinationCountry}
+                      onChange={(e) => setDestinationCountry(e.target.value)}
+                      placeholder="e.g. Singapore"
+                      className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-[#375534] border border-[#6B9071]/60 text-[#E3EED4] placeholder:text-[#AEC3B0]/65 focus:outline-none focus:border-[#E3EED4]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="sm:col-span-2">
+                    <label
+                      htmlFor="service-tier"
+                      className="block text-xs font-medium text-[#AEC3B0] mb-1.5"
+                    >
+                      International Service Tier
+                    </label>
+                    <select
+                      id="service-tier"
+                      value={serviceTier}
+                      onChange={(e) => setServiceTier(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-[#375534] border border-[#6B9071]/60 text-[#E3EED4] focus:outline-none focus:border-[#E3EED4]"
+                    >
+                      <option>Air Express Priority (24–48h)</option>
+                      <option>Diplomatic &amp; Hand-Carry Courier</option>
+                      <option>Cold-Chain Biotech (+2°C to +8°C)</option>
+                      <option>Intermodal Pallet Freight (3–6 Days)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="weight-kg"
+                      className="block text-xs font-medium text-[#AEC3B0] mb-1.5"
+                    >
+                      Est. Weight (kg)
+                    </label>
+                    <input
+                      id="weight-kg"
+                      type="number"
+                      min="0.5"
+                      step="0.5"
+                      value={weightKg}
+                      onChange={(e) => setWeightKg(e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-sm font-mono tabular-nums rounded-lg bg-[#375534] border border-[#6B9071]/60 text-[#E3EED4] focus:outline-none focus:border-[#E3EED4]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="contact-email"
+                      className="block text-xs font-medium text-[#AEC3B0] mb-1.5"
+                    >
+                      Business Email
+                    </label>
+                    <input
+                      id="contact-email"
+                      type="email"
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      placeholder="logistics@company.com"
+                      className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-[#375534] border border-[#6B9071]/60 text-[#E3EED4] placeholder:text-[#AEC3B0]/65 focus:outline-none focus:border-[#E3EED4]"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="shipment-notes"
+                      className="block text-xs font-medium text-[#AEC3B0] mb-1.5"
+                    >
+                      Cargo Notes (Optional)
+                    </label>
+                    <input
+                      id="shipment-notes"
+                      type="text"
+                      value={shipmentNotes}
+                      onChange={(e) => setShipmentNotes(e.target.value)}
+                      placeholder="Customs HS code, dimensions, or temp range"
+                      className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-[#375534] border border-[#6B9071]/60 text-[#E3EED4] placeholder:text-[#AEC3B0]/65 focus:outline-none focus:border-[#E3EED4]"
+                    />
+                  </div>
+                </div>
+
+                {formError && (
+                  <p className="text-xs font-medium text-[#E3EED4] bg-[#375534] border border-[#E3EED4]/50 rounded-lg px-3.5 py-2">
+                    {formError}
+                  </p>
+                )}
+
+                <div className="pt-1 flex flex-wrap items-center justify-between gap-4">
+                  <span className="text-xs text-[#AEC3B0]">
+                    Includes customs pre-clearance review and lane pricing.
+                  </span>
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#E3EED4] text-[#0F2A1D] hover:bg-[#AEC3B0] transition-colors whitespace-nowrap shrink-0"
+                  >
+                    <span>Calculate Worldwide Quote</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </section>
+      </main>
+      )}
+
+      {/* Quiet Editorial Footer */}
+      <footer className="border-t border-[#6B9071]/35 bg-[#0F2A1D] px-4 sm:px-8 py-8">
+        <div className="max-w-[1280px] mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-[#AEC3B0]">
+          <div className="space-y-1">
+            <div className="font-bold text-sm text-[#E3EED4]">Global Courier</div>
+            <div>
+              Worldwide International Courier &amp; Bonded Air Express · London · New York ·
+              Singapore · Frankfurt
+            </div>
+          </div>
+          <nav aria-label="Footer navigation" className="flex flex-wrap items-center gap-6">
+            <a
+              href="/#about"
               onClick={(e) => {
                 e.preventDefault();
-                navigateToTab('home', false);
+                navigateToHome('about');
               }}
-              className="text-lg font-bold tracking-tight text-[#3B2A1F] whitespace-nowrap shrink-0"
+              className="hover:text-[#E3EED4] transition-colors"
             >
-              Camber Dispatch
+              About Us
             </a>
-
-            <button
-              type="button"
-              onClick={handleTrackParcelAction}
-              className="text-sm font-medium text-[#3B2A1F] hover:text-[#6F4E37] transition-colors whitespace-nowrap shrink-0"
+            <a
+              href="/#services"
+              onClick={(e) => {
+                e.preventDefault();
+                navigateToHome('services');
+              }}
+              className="hover:text-[#E3EED4] transition-colors"
+            >
+              Services
+            </a>
+            <a
+              href="/#network"
+              onClick={(e) => {
+                e.preventDefault();
+                navigateToHome('network');
+              }}
+              className="hover:text-[#E3EED4] transition-colors"
+            >
+              Global Network
+            </a>
+            <a
+              href="/track"
+              onClick={(e) => {
+                e.preventDefault();
+                navigateToTrack(trackQueryCode);
+              }}
+              className="hover:text-[#E3EED4] transition-colors"
             >
               Track Parcel
-            </button>
-          </header>
-        ) : (
-          <header className="sticky top-0 z-40 h-14 bg-[#EDE3D4]/95 backdrop-blur-sm border-b border-[#D4B996] px-4 sm:px-6 flex items-center justify-between gap-8">
+            </a>
+            <a
+              href="/#contact"
+              onClick={(e) => {
+                e.preventDefault();
+                navigateToHome('contact');
+              }}
+              className="hover:text-[#E3EED4] transition-colors"
+            >
+              Contact Us
+            </a>
             <a
               href="/admin"
               onClick={(e) => {
                 e.preventDefault();
-                navigateToTab('admin', true);
+                navigateToAdmin();
               }}
-              className="text-lg font-bold tracking-tight text-[#3B2A1F] whitespace-nowrap shrink-0"
+              className={`transition-colors ${
+                currentPage === 'admin'
+                  ? 'text-[#E3EED4] underline underline-offset-4'
+                  : 'hover:text-[#E3EED4]'
+              }`}
             >
-              Camber Dispatch
+              Admin Portal
             </a>
-
-            <nav
-              aria-label="Admin portal navigation"
-              className="hidden md:flex items-center gap-6 text-sm font-medium"
-            >
-              <button
-                type="button"
-                onClick={() => navigateToTab('admin', true)}
-                className={`whitespace-nowrap shrink-0 pb-0.5 transition-colors border-b-2 ${
-                  activeTab === 'admin'
-                    ? 'text-[#3B2A1F] border-[#6F4E37]'
-                    : 'text-[#6F4E37] border-transparent hover:text-[#3B2A1F]'
-                }`}
-              >
-                Admin
-              </button>
-              <button
-                type="button"
-                onClick={() => navigateToTab('dispatch', true)}
-                className={`whitespace-nowrap shrink-0 pb-0.5 transition-colors border-b-2 ${
-                  activeTab === 'dispatch'
-                    ? 'text-[#3B2A1F] border-[#6F4E37]'
-                    : 'text-[#6F4E37] border-transparent hover:text-[#3B2A1F]'
-                }`}
-              >
-                Dispatch
-              </button>
-              <button
-                type="button"
-                onClick={() => navigateToTab('courier', true)}
-                className={`whitespace-nowrap shrink-0 pb-0.5 transition-colors border-b-2 ${
-                  activeTab === 'courier'
-                    ? 'text-[#3B2A1F] border-[#6F4E37]'
-                    : 'text-[#6F4E37] border-transparent hover:text-[#3B2A1F]'
-                }`}
-              >
-                Courier GPS
-              </button>
-              <button
-                type="button"
-                onClick={() => navigateToTab('customer', true)}
-                className={`whitespace-nowrap shrink-0 pb-0.5 transition-colors border-b-2 ${
-                  activeTab === 'customer'
-                    ? 'text-[#3B2A1F] border-[#6F4E37]'
-                    : 'text-[#6F4E37] border-transparent hover:text-[#3B2A1F]'
-                }`}
-              >
-                Customer Tracker
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsAlertsOpen(true)}
-                className="whitespace-nowrap shrink-0 pb-0.5 text-[#6F4E37] hover:text-[#3B2A1F] transition-colors inline-flex items-center gap-1.5"
-              >
-                <Bell className="w-3.5 h-3.5" />
-                <span>Alerts</span>
-                {unreadAlertsCount > 0 && (
-                  <span className="font-mono text-xs font-semibold text-[#3B2A1F] tabular-nums">
-                    ({unreadAlertsCount})
-                  </span>
-                )}
-              </button>
-              <a
-                href="/"
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigateToTab('home', false);
-                }}
-                className="whitespace-nowrap shrink-0 pb-0.5 text-[#6F4E37] hover:text-[#3B2A1F] transition-colors"
-              >
-                Track Parcel
-              </a>
-            </nav>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsAlertsOpen(true)}
-                className="md:hidden relative p-2 rounded-lg text-[#3B2A1F] hover:bg-[#D4B996]/40 min-h-[40px] min-w-[40px] flex items-center justify-center"
-                aria-label="Open alerts"
-              >
-                <Bell className="w-4 h-4" />
-                {unreadAlertsCount > 0 && (
-                  <span className="absolute top-1 right-1 font-mono text-[10px] font-bold text-[#B91C1C]">
-                    {unreadAlertsCount}
-                  </span>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsNewModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs sm:text-sm font-medium rounded-lg bg-[#6F4E37] text-[#FFF9F0] hover:bg-[#3B2A1F] transition-colors whitespace-nowrap shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                <span>New Delivery</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsMobileNavOpen((v) => !v)}
-                className="md:hidden p-2 rounded-lg text-[#3B2A1F] hover:bg-[#D4B996]/40 min-h-[40px] min-w-[40px] flex items-center justify-center"
-                aria-label="Toggle admin navigation menu"
-              >
-                {isMobileNavOpen ? (
-                  <X className="w-5 h-5" />
-                ) : (
-                  <Menu className="w-5 h-5" />
-                )}
-              </button>
-            </div>
-          </header>
-        )}
-
-        {/* Admin Mobile Navigation Drawer */}
-        {isAdminPortal && isMobileNavOpen && (
-          <div className="md:hidden bg-[#EDE3D4] border-b border-[#D4B996] px-4 py-3 flex flex-col gap-2">
-            {(
-              [
-                ['admin', 'Admin Dashboard'],
-                ['dispatch', 'Dispatch Board'],
-                ['courier', 'Courier GPS'],
-                ['customer', 'Customer Tracker'],
-              ] as const
-            ).map(([tab, label]) => (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => {
-                  navigateToTab(tab, true);
-                  setIsMobileNavOpen(false);
-                }}
-                className={`text-left px-3 py-2 rounded-lg text-sm font-medium ${
-                  activeTab === tab
-                    ? 'bg-[#3B2A1F] text-[#FFF9F0]'
-                    : 'text-[#3B2A1F] hover:bg-[#D4B996]/40'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-            <a
-              href="/"
-              onClick={(e) => {
-                e.preventDefault();
-                navigateToTab('home', false);
-                setIsMobileNavOpen(false);
-              }}
-              className="text-left px-3 py-2 rounded-lg text-sm font-medium text-[#6F4E37] hover:bg-[#D4B996]/40"
-            >
-              Track Parcel (Public Site)
-            </a>
-          </div>
-        )}
-
-        {/* Real-time WebSocket Toast Notification */}
-        {liveToast && (
-          <div
-            role="status"
-            className="fixed bottom-4 right-4 z-50 max-w-sm bg-[#3B2A1F] text-[#FFF9F0] border border-[#B08968] rounded-xl px-4 py-3 shadow-lg flex items-start justify-between gap-3"
-          >
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 text-xs text-[#D4B996]">
-                <span className="font-mono font-semibold">
-                  {liveToast.trackingCode}
-                </span>
-                <span aria-hidden="true">·</span>
-                <span>{formatClockTime(liveToast.createdAt)}</span>
-              </div>
-              <p className="text-sm font-semibold mt-0.5">{liveToast.title}</p>
-              <p className="text-xs text-[#EDE3D4] mt-0.5 line-clamp-2">
-                {liveToast.message}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setLiveToast(null)}
-              className="p-1 text-[#D4B996] hover:text-[#FFF9F0]"
-              aria-label="Dismiss notification"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        {/* Main Workspace Container */}
-        <main className="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-6 py-6 space-y-6">
-          {error && (
-            <div className="px-4 py-3 rounded-xl bg-[#FEE2E2] border border-[#FECACA] text-sm text-[#B91C1C]">
-              Dispatch server connection issue: {error}
-            </div>
-          )}
-
-          {/* Show Operational Summary KPI Strip Inside Admin Portal */}
-          {isAdminPortal && (
-            <section
-              aria-label="Operational summary"
-              className="grid grid-cols-2 lg:grid-cols-4 gap-4"
-            >
-              <div className="p-4 rounded-xl bg-[#EDE3D4]/65 border border-[#D4B996]">
-                <div className="text-xs font-medium text-[#6F4E37]">
-                  Active Deliveries
-                </div>
-                <div className="mt-1 flex items-baseline justify-between">
-                  <span className="font-mono text-2xl font-bold text-[#3B2A1F] tabular-nums">
-                    {activeCount}
-                  </span>
-                  <span className="text-xs text-[#6F4E37] tabular-nums">
-                    {delayedCount > 0 ? `${delayedCount} delayed` : 'On schedule'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-[#EDE3D4]/65 border border-[#D4B996]">
-                <div className="text-xs font-medium text-[#6F4E37]">
-                  Average Route ETA
-                </div>
-                <div className="mt-1 flex items-baseline justify-between">
-                  <span className="font-mono text-2xl font-bold text-[#3B2A1F] tabular-nums">
-                    {avgEtaMinutes}m
-                  </span>
-                  <span className="text-xs text-[#6F4E37]">Live traffic</span>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-[#EDE3D4]/65 border border-[#D4B996]">
-                <div className="text-xs font-medium text-[#6F4E37]">
-                  Open Dispatch Tasks
-                </div>
-                <div className="mt-1 flex items-baseline justify-between">
-                  <span className="font-mono text-2xl font-bold text-[#3B2A1F] tabular-nums">
-                    {openTaskCount}
-                  </span>
-                  <span className="text-xs text-[#6F4E37] tabular-nums">
-                    {state.tasks.length} total
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-[#EDE3D4]/65 border border-[#D4B996]">
-                <div className="text-xs font-medium text-[#6F4E37]">
-                  Live Telemetry Sync
-                </div>
-                <div className="mt-1 flex items-baseline justify-between">
-                  <span className="font-mono text-2xl font-bold text-[#3B2A1F] tabular-nums">
-                    {
-                      state.couriers.filter(
-                        (c) => c.status !== 'available' || c.liveStreamActive
-                      ).length
-                    }
-                    /{state.couriers.length}
-                  </span>
-                  <span className="text-xs text-[#6F4E37] capitalize">
-                    {connectionStatus}
-                  </span>
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* Primary Views */}
-          {loading ? (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-5 h-[540px] rounded-xl bg-[#EDE3D4]/60 border border-[#D4B996] animate-pulse" />
-              <div className="lg:col-span-7 h-[540px] rounded-xl bg-[#EDE3D4]/60 border border-[#D4B996] animate-pulse" />
-            </div>
-          ) : !isAdminPortal && activeTab === 'home' ? (
-            <LandingView
-              parcels={state.parcels}
-              couriers={state.couriers}
-              selectedParcelId={selectedParcel?.id ?? null}
-              onSelectParcel={(id) => setSelectedParcelId(id)}
-              onRouteComputed={(parcelId, routeData) => {
-                void syncParcelRoute(parcelId, routeData);
-              }}
-              pushPrefs={pushPrefs}
-              onEnablePushForParcel={(code) => handleToggleDevicePush(code)}
-              onTriggerSamplePush={async (parcelId, evt) => {
-                await triggerTestPushAlert(parcelId, evt);
-              }}
-              onOpenFullTracker={() => navigateToTab('customer', false)}
-            />
-          ) : activeTab === 'dispatch' ? (
-            <div className="space-y-8">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                {/* Left Column: Parcel Queue + Task Controls */}
-                <div className="lg:col-span-5 space-y-5">
-                  <div className="rounded-xl border border-[#D4B996] bg-[#FFF9F0] overflow-hidden">
-                    <div className="p-4 bg-[#EDE3D4]/65 border-b border-[#D4B996] space-y-3">
-                      <div className="relative">
-                        <Search className="w-4 h-4 text-[#B08968] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                        <input
-                          type="text"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder="Search tracking code, customer, address, courier..."
-                          className="w-full pl-9 pr-3 py-2 text-sm bg-[#FFF9F0] border border-[#D4B996] rounded-lg text-[#3B2A1F] placeholder:text-[#B08968] focus:outline-none focus:border-[#6F4E37]"
-                        />
-                      </div>
-
-                      <div className="flex items-center gap-1 p-1 bg-[#EDE3D4] rounded-lg overflow-x-auto">
-                        {(
-                          [
-                            ['all', 'All'],
-                            ['active', 'Active'],
-                            ['out_for_delivery', 'Arriving'],
-                            ['delayed', 'Delayed'],
-                            ['delivered', 'Delivered'],
-                          ] as const
-                        ).map(([value, label]) => (
-                          <button
-                            key={value}
-                            type="button"
-                            onClick={() => setParcelFilter(value)}
-                            className={`px-2.5 py-1 text-xs font-medium rounded-md whitespace-nowrap shrink-0 transition-colors ${
-                              parcelFilter === value
-                                ? 'bg-[#FFF9F0] text-[#3B2A1F] shadow-sm'
-                                : 'text-[#6F4E37] hover:text-[#3B2A1F]'
-                            }`}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="divide-y divide-[#EDE3D4] max-h-[360px] overflow-y-auto">
-                      {filteredParcels.length === 0 ? (
-                        <div className="p-8 text-center">
-                          <Package className="w-7 h-7 text-[#B08968] mx-auto mb-2" />
-                          <p className="text-sm font-medium text-[#3B2A1F]">
-                            No deliveries match your filter
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setParcelFilter('all');
-                              setSearchQuery('');
-                            }}
-                            className="mt-2 text-xs font-medium text-[#6F4E37] underline"
-                          >
-                            Reset filters
-                          </button>
-                        </div>
-                      ) : (
-                        filteredParcels.map((parcel) => {
-                          const isSelected = selectedParcel?.id === parcel.id;
-                          const courier = state.couriers.find(
-                            (c) => c.id === parcel.courierId
-                          );
-                          return (
-                            <button
-                              key={parcel.id}
-                              type="button"
-                              onClick={() => setSelectedParcelId(parcel.id)}
-                              className={`w-full text-left px-4 py-3.5 transition-colors flex items-start justify-between gap-3 ${
-                                isSelected
-                                  ? 'bg-[#EDE3D4]/85'
-                                  : 'bg-[#FFF9F0] hover:bg-[#EDE3D4]/40'
-                              }`}
-                            >
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2 text-xs text-[#6F4E37]">
-                                  <span className="font-mono font-semibold text-[#3B2A1F]">
-                                    {parcel.trackingCode}
-                                  </span>
-                                  <span aria-hidden="true">·</span>
-                                  <span>{formatPriorityLabel(parcel.priority)}</span>
-                                  {courier && (
-                                    <>
-                                      <span aria-hidden="true">·</span>
-                                      <span className="truncate">{courier.name}</span>
-                                    </>
-                                  )}
-                                </div>
-                                <div className="text-sm font-semibold text-[#3B2A1F] truncate mt-0.5">
-                                  {parcel.customerName}
-                                </div>
-                                <div className="text-xs text-[#6F4E37] truncate mt-0.5">
-                                  {parcel.destinationAddress}
-                                </div>
-                              </div>
-
-                              <div className="text-right shrink-0 space-y-1">
-                                <StatusLabel status={parcel.status} />
-                                <div className="font-mono text-xs text-[#6F4E37] tabular-nums">
-                                  {formatEtaText(parcel.etaSeconds, parcel.status)} ·{' '}
-                                  {formatDistanceKm(parcel.distanceMeters)}
-                                </div>
-                              </div>
-                            </button>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-
-                  {selectedParcel && (
-                    <SelectedParcelOperations
-                      parcel={selectedParcel}
-                      couriers={state.couriers}
-                      tasks={state.tasks}
-                      onUpdateParcel={async (id, updates) => {
-                        await updateParcel(id, updates);
-                      }}
-                      onDeleteParcel={async (id) => {
-                        await deleteParcel(id);
-                        setSelectedParcelId(null);
-                      }}
-                      onSendTelemetry={sendCourierTelemetry}
-                      onCreateTask={createTask}
-                      onToggleTask={toggleTask}
-                    />
-                  )}
-                </div>
-
-                {/* Right Column: Live Interactive Map */}
-                <div className="lg:col-span-7 flex flex-col gap-3 lg:sticky lg:top-20">
-                  <CourierMapPanel
-                    parcels={state.parcels}
-                    couriers={state.couriers}
-                    selectedParcelId={selectedParcel?.id ?? null}
-                    onSelectParcel={(id) => setSelectedParcelId(id)}
-                    onRouteComputed={(parcelId, routeData) => {
-                      void syncParcelRoute(parcelId, routeData);
-                    }}
-                    className="h-[460px] lg:h-[640px]"
-                  />
-                </div>
-              </div>
-
-              {/* Integrated Master Task Queue & Fleet Roster below the split */}
-              <FleetAndTasksView
-                parcels={state.parcels}
-                couriers={state.couriers}
-                tasks={state.tasks}
-                onToggleTask={toggleTask}
-                onSendTelemetry={sendCourierTelemetry}
-                onSelectParcelOnMap={(parcelId) => {
-                  setSelectedParcelId(parcelId);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-              />
-            </div>
-          ) : activeTab === 'customer' ? (
-            <CustomerTrackerView
-              parcels={state.parcels}
-              couriers={state.couriers}
-              selectedParcelId={selectedParcel?.id ?? null}
-              onSelectParcel={(id) => setSelectedParcelId(id)}
-              onRouteComputed={(parcelId, routeData) => {
-                void syncParcelRoute(parcelId, routeData);
-              }}
-              pushPrefs={pushPrefs}
-              onUpdatePushPrefs={setPushPrefs}
-              onToggleDevicePush={() => handleToggleDevicePush()}
-              onTriggerSamplePush={async (parcelId, evt) => {
-                await triggerTestPushAlert(parcelId, evt);
-              }}
-            />
-          ) : activeTab === 'admin' ? (
-            <AdminDashboardView
-              parcels={state.parcels}
-              couriers={state.couriers}
-              tasks={state.tasks}
-              onCreateCourier={createCourier}
-              onDeleteCourier={deleteCourier}
-              onAssignParcelCourier={async (parcelId, courierId) => {
-                await updateParcel(parcelId, { courierId });
-              }}
-              onUpdateParcelStatus={async (parcelId, status) => {
-                await updateParcel(parcelId, { status });
-              }}
-              onTriggerPushAlert={triggerTestPushAlert}
-              onInspectParcel={(parcelId) => {
-                setSelectedParcelId(parcelId);
-                navigateToTab('dispatch', true);
-              }}
-              onOpenNewDelivery={() => setIsNewModalOpen(true)}
-            />
-          ) : (
-            <CourierDeviceView
-              couriers={state.couriers}
-              parcels={state.parcels}
-              onSendTelemetry={sendCourierTelemetry}
-              onRouteComputed={(parcelId, routeData) => {
-                void syncParcelRoute(parcelId, routeData);
-              }}
-            />
-          )}
-        </main>
-
-        {/* Footer: Public pages show ONLY Company Name + Track Parcel; Admin Portal (/admin) hosts operational links separately */}
-        {!isAdminPortal ? (
-          <footer className="border-t border-[#D4B996] bg-[#EDE3D4]/40 px-4 sm:px-6 py-5">
-            <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-4 text-xs text-[#3B2A1F]">
-              <a
-                href="/"
-                onClick={(e) => {
-                  e.preventDefault();
-                  navigateToTab('home', false);
-                }}
-                className="font-bold tracking-tight text-sm text-[#3B2A1F] whitespace-nowrap"
-              >
-                Camber Dispatch
-              </a>
-              <button
-                type="button"
-                onClick={handleTrackParcelAction}
-                className="font-medium text-[#6F4E37] hover:text-[#3B2A1F] transition-colors whitespace-nowrap"
-              >
-                Track Parcel
-              </button>
-            </div>
-          </footer>
-        ) : (
-          <footer className="border-t border-[#D4B996] bg-[#EDE3D4]/55 px-4 sm:px-6 py-5">
-            <div className="max-w-[1440px] mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-[#6F4E37]">
-              <div>
-                <span className="font-bold text-[#3B2A1F]">Camber Dispatch</span>
-                <span className="mx-2" aria-hidden="true">
-                  ·
-                </span>
-                <span>Admin Portal</span>
-              </div>
-              <div className="flex flex-wrap items-center gap-5">
-                <button
-                  type="button"
-                  onClick={() => navigateToTab('admin', true)}
-                  className="hover:text-[#3B2A1F] transition-colors"
-                >
-                  Admin Dashboard
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigateToTab('dispatch', true)}
-                  className="hover:text-[#3B2A1F] transition-colors"
-                >
-                  Dispatch Board
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigateToTab('courier', true)}
-                  className="hover:text-[#3B2A1F] transition-colors"
-                >
-                  Courier Geolocation
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigateToTab('customer', true)}
-                  className="hover:text-[#3B2A1F] transition-colors"
-                >
-                  Customer Tracker
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsAlertsOpen(true)}
-                  className="hover:text-[#3B2A1F] transition-colors"
-                >
-                  Alerts ({unreadAlertsCount})
-                </button>
-                <a
-                  href="/"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigateToTab('home', false);
-                  }}
-                  className="font-medium text-[#3B2A1F] hover:text-[#6F4E37] transition-colors"
-                >
-                  Track Parcel
-                </a>
-              </div>
-            </div>
-          </footer>
-        )}
-
-        {/* Modals & Drawers */}
-        <NewDeliveryModal
-          isOpen={isNewModalOpen}
-          couriers={state.couriers}
-          onClose={() => setIsNewModalOpen(false)}
-          onCreate={async (payload) => {
-            const created = await createParcel(payload);
-            setSelectedParcelId(created.id);
-          }}
-        />
-
-        <NotificationDrawer
-          isOpen={isAlertsOpen}
-          notifications={state.notifications}
-          onClose={() => setIsAlertsOpen(false)}
-          onMarkRead={(id) => void markNotificationRead(id)}
-          onMarkAllRead={() => void markAllNotificationsRead()}
-          onInspectParcel={(parcelId) => {
-            setSelectedParcelId(parcelId);
-            navigateToTab('customer', true);
-          }}
-        />
-      </div>
-    </APIProvider>
+          </nav>
+        </div>
+      </footer>
+    </div>
   );
 }
