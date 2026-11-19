@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  ArrowLeft,
   ArrowUpRight,
   Check,
   CheckCircle2,
@@ -30,8 +29,6 @@ interface AdminPortalPageProps {
   onResetParcels: () => void;
   onAddCourier: (courier: AdminCourier) => void;
   onRemoveCourier: (id: string) => void;
-  onNavigateHome: (sectionId?: string) => void;
-  onNavigateTrack: (code: string) => void;
 }
 
 const PRESET_CORRIDORS: Record<
@@ -96,8 +93,6 @@ export default function AdminPortalPage({
   onResetParcels,
   onAddCourier,
   onRemoveCourier,
-  onNavigateHome,
-  onNavigateTrack,
 }: AdminPortalPageProps) {
   const [selectedWaybill, setSelectedWaybill] = useState<string>(
     () => parcels[0]?.waybill ?? ''
@@ -293,22 +288,49 @@ export default function AdminPortalPage({
   };
 
   return (
-    <div className="flex-1 w-full max-w-[1280px] mx-auto px-4 sm:px-8 py-8 sm:py-12 space-y-10">
-      {/* Admin Top Header */}
-      <div className="space-y-4">
-        <button
-          type="button"
-          onClick={() => onNavigateHome()}
-          className="inline-flex items-center gap-2 text-xs font-medium text-[#AEC3B0] hover:text-[#E3EED4] transition-colors"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to Global Courier Overview</span>
-        </button>
+    <div className="min-h-screen bg-[#375534] text-[#E3EED4] flex flex-col">
+      {/* Standalone Admin Top Utility Bar */}
+      <header className="sticky top-0 z-40 h-16 bg-[#0F2A1D] border-b border-[#6B9071]/35 px-4 sm:px-8 flex items-center justify-between gap-6">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="text-lg font-bold tracking-tight text-[#E3EED4] whitespace-nowrap">
+            Global Courier
+          </span>
+          <span aria-hidden="true" className="text-[#6B9071]">
+            /
+          </span>
+          <span className="text-xs sm:text-sm font-mono text-[#AEC3B0] whitespace-nowrap">
+            Admin Console
+          </span>
+        </div>
 
+        <div className="flex items-center gap-4 text-xs font-medium text-[#AEC3B0] shrink-0">
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 hover:text-[#E3EED4] transition-colors whitespace-nowrap"
+          >
+            <span>Public Site</span>
+            <ArrowUpRight className="w-3.5 h-3.5" />
+          </a>
+          <a
+            href="/track"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-[#6B9071]/60 text-[#E3EED4] hover:bg-[#375534] transition-colors whitespace-nowrap"
+          >
+            <span>Tracking Page</span>
+            <ArrowUpRight className="w-3.5 h-3.5" />
+          </a>
+        </div>
+      </header>
+
+      <main className="flex-1 w-full max-w-[1280px] mx-auto px-4 sm:px-8 py-8 sm:py-12 space-y-10">
+        {/* Admin Heading & Primary Actions */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-[#6B9071]/35 pb-6">
           <div className="space-y-2 max-w-2xl">
             <p className="text-xs font-medium text-[#AEC3B0]">
-              Global Courier · Dispatch Administration Console
+              Internal Dispatch Operations · Consignment &amp; Fleet Control
             </p>
             <h1
               className="text-3xl sm:text-4xl font-bold tracking-tight text-[#E3EED4]"
@@ -318,7 +340,7 @@ export default function AdminPortalPage({
             </h1>
             <p className="text-sm text-[#AEC3B0] leading-relaxed">
               Manage the three ready-to-track sample parcels and tracking codes below, log new
-              customs or delivery checkpoints, or inspect any shipment on the public tracking
+              customs or delivery checkpoints, or open any consignment in the public tracking
               portal.
             </p>
           </div>
@@ -345,7 +367,6 @@ export default function AdminPortalPage({
             </button>
           </div>
         </div>
-      </div>
 
       {/* KPI Summary Bar */}
       <section className="grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-[#6B9071]/35 rounded-xl bg-[#0F2A1D] border border-[#6B9071]/45 overflow-hidden">
@@ -563,14 +584,15 @@ export default function AdminPortalPage({
                   </button>
 
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => onNavigateTrack(parcel.waybill)}
+                    <a
+                      href={`/track?code=${encodeURIComponent(parcel.waybill)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md border border-[#6B9071]/60 text-[#E3EED4] hover:bg-[#375534] transition-colors"
                     >
                       <span>Track</span>
                       <ArrowUpRight className="w-3.5 h-3.5" />
-                    </button>
+                    </a>
                     {parcels.length > 1 && (
                       <button
                         type="button"
@@ -743,6 +765,14 @@ export default function AdminPortalPage({
           </form>
         </div>
       </section>
+      </main>
+
+      <footer className="border-t border-[#6B9071]/35 bg-[#0F2A1D] px-4 sm:px-8 py-5 text-xs text-[#AEC3B0]">
+        <div className="max-w-[1280px] mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <span className="font-semibold text-[#E3EED4]">Global Courier · Internal Dispatch Admin</span>
+          <span>Route: /admin</span>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -235,12 +235,32 @@ export default function App() {
       setCurrentPage(isTrack ? 'track' : 'home');
       setTrackQueryCode(code);
     };
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === PARCELS_STORAGE_KEY && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue) as TrackableParcel[];
+          if (Array.isArray(parsed)) setParcels(parsed);
+        } catch {
+          // Ignore malformed storage updates
+        }
+      }
+      if (e.key === COURIERS_STORAGE_KEY && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue) as AdminCourier[];
+          if (Array.isArray(parsed)) setCouriers(parsed);
+        } catch {
+          // Ignore malformed storage updates
+        }
+      }
+    };
     const handleQuota = () => setMapsQuotaExceeded(true);
 
     window.addEventListener('popstate', handlePopState);
+    window.addEventListener('storage', handleStorage);
     window.addEventListener('gmp-quota-exceeded', handleQuota);
     return () => {
       window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('storage', handleStorage);
       window.removeEventListener('gmp-quota-exceeded', handleQuota);
     };
   }, []);
@@ -251,13 +271,6 @@ export default function App() {
     window.history.pushState({}, '', targetUrl);
     setCurrentPage('track');
     setTrackQueryCode(cleaned);
-    setMobileMenuOpen(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const navigateToAdmin = () => {
-    window.history.pushState({}, '', '/admin');
-    setCurrentPage('admin');
     setMobileMenuOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -426,6 +439,21 @@ export default function App() {
     }
   };
 
+  if (currentPage === 'admin') {
+    return (
+      <AdminPortalPage
+        parcels={parcels}
+        couriers={couriers}
+        onUpdateParcel={handleUpdateParcel}
+        onAddParcel={handleAddParcel}
+        onDeleteParcel={handleDeleteParcel}
+        onResetParcels={handleResetParcels}
+        onAddCourier={handleAddCourier}
+        onRemoveCourier={handleRemoveCourier}
+      />
+    );
+  }
+
   const currentRegion = CORRIDOR_REGIONS[activeRegion];
 
   return (
@@ -590,30 +618,10 @@ export default function App() {
           >
             Request Quote
           </button>
-          <button
-            type="button"
-            onClick={() => navigateToAdmin()}
-            className="text-left px-3 py-2.5 rounded-lg text-sm font-medium text-[#AEC3B0] hover:bg-[#375534] hover:text-[#E3EED4] transition-colors"
-          >
-            Admin Portal
-          </button>
         </div>
       )}
 
-      {currentPage === 'admin' ? (
-        <AdminPortalPage
-          parcels={parcels}
-          couriers={couriers}
-          onUpdateParcel={handleUpdateParcel}
-          onAddParcel={handleAddParcel}
-          onDeleteParcel={handleDeleteParcel}
-          onResetParcels={handleResetParcels}
-          onAddCourier={handleAddCourier}
-          onRemoveCourier={handleRemoveCourier}
-          onNavigateHome={navigateToHome}
-          onNavigateTrack={navigateToTrack}
-        />
-      ) : currentPage === 'track' ? (
+      {currentPage === 'track' ? (
         <TrackParcelPage
           parcels={parcels}
           initialCode={trackQueryCode}
@@ -1486,20 +1494,6 @@ export default function App() {
               className="hover:text-[#E3EED4] transition-colors"
             >
               Contact Us
-            </a>
-            <a
-              href="/admin"
-              onClick={(e) => {
-                e.preventDefault();
-                navigateToAdmin();
-              }}
-              className={`transition-colors ${
-                currentPage === 'admin'
-                  ? 'text-[#E3EED4] underline underline-offset-4'
-                  : 'hover:text-[#E3EED4]'
-              }`}
-            >
-              Admin Portal
             </a>
           </nav>
         </div>
