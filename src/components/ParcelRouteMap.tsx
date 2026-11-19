@@ -67,9 +67,9 @@ function RouteLayer({
       const flightPath = new mapsLib.Polyline({
         path: [parcel.originPosition, parcel.currentPosition, parcel.destinationPosition],
         geodesic: true,
-        strokeColor: '#0F2A1D',
-        strokeOpacity: 0.9,
-        strokeWeight: 3,
+        strokeColor: '#474150',
+        strokeOpacity: 0.92,
+        strokeWeight: 3.5,
         map,
       });
       polylinesRef.current = [flightPath];
@@ -118,7 +118,7 @@ function RouteLayer({
         const createdPolylines = primaryRoute.createPolylines();
         createdPolylines.forEach((polyline) => {
           polyline.setOptions({
-            strokeColor: '#0F2A1D',
+            strokeColor: '#474150',
             strokeOpacity: 0.95,
             strokeWeight: 5,
           });
@@ -183,8 +183,8 @@ function RouteLayer({
           const fallbackLine = new mapsLib.Polyline({
             path: [parcel.activeGroundOrigin, parcel.destinationPosition],
             geodesic: true,
-            strokeColor: '#375534',
-            strokeOpacity: 0.85,
+            strokeColor: '#474150',
+            strokeOpacity: 0.9,
             strokeWeight: 4,
             map,
           });
@@ -241,11 +241,11 @@ function ParcelMarkers({
             title={`Origin: ${parcel.originFacility}`}
             onClick={() => setActiveMarker('origin')}
           >
-            <Pin background="#6B9071" borderColor="#0F2A1D" glyphColor="#E3EED4" />
+            <Pin background="#9C99B8" borderColor="#474150" glyphColor="#474150" />
           </AdvancedMarker>
           {activeMarker === 'origin' && originMarker && (
             <InfoWindow anchor={originMarker} onCloseClick={() => setActiveMarker(null)}>
-              <div className="p-1 text-xs text-[#0F2A1D] max-w-[220px]">
+              <div className="p-1 text-xs text-[#474150] max-w-[220px]">
                 <div className="font-bold">Origin · {parcel.originCode}</div>
                 <div className="mt-0.5">{parcel.originFacility}</div>
               </div>
@@ -264,11 +264,11 @@ function ParcelMarkers({
               title={parcel.activeGroundOriginLabel}
               onClick={() => setActiveMarker('origin')}
             >
-              <Pin background="#6B9071" borderColor="#0F2A1D" glyphColor="#E3EED4" />
+              <Pin background="#9C99B8" borderColor="#474150" glyphColor="#474150" />
             </AdvancedMarker>
             {activeMarker === 'origin' && originMarker && (
               <InfoWindow anchor={originMarker} onCloseClick={() => setActiveMarker(null)}>
-                <div className="p-1 text-xs text-[#0F2A1D] max-w-[220px]">
+                <div className="p-1 text-xs text-[#474150] max-w-[220px]">
                   <div className="font-bold">Dispatch Gate</div>
                   <div className="mt-0.5">{parcel.activeGroundOriginLabel}</div>
                 </div>
@@ -284,11 +284,11 @@ function ParcelMarkers({
         title={`Current Parcel Location: ${parcel.currentLocationLabel}`}
         onClick={() => setActiveMarker('current')}
       >
-        <Pin background="#0F2A1D" borderColor="#E3EED4" glyphColor="#E3EED4" scale={1.15} />
+        <Pin background="#FFBB00" borderColor="#474150" glyphColor="#474150" scale={1.18} />
       </AdvancedMarker>
       {activeMarker === 'current' && currentMarker && (
         <InfoWindow anchor={currentMarker} onCloseClick={() => setActiveMarker(null)}>
-          <div className="p-1 text-xs text-[#0F2A1D] max-w-[230px]">
+          <div className="p-1 text-xs text-[#474150] max-w-[230px]">
             <div className="font-bold">Parcel {parcel.waybill}</div>
             <div className="font-semibold mt-0.5">{parcel.currentLocationLabel}</div>
             <div className="text-[11px] opacity-80 mt-0.5">{parcel.currentLocationDetails}</div>
@@ -303,11 +303,11 @@ function ParcelMarkers({
         title={`Destination: ${parcel.destinationAddress}`}
         onClick={() => setActiveMarker('destination')}
       >
-        <Pin background="#375534" borderColor="#0F2A1D" glyphColor="#E3EED4" />
+        <Pin background="#474150" borderColor="#FFBB00" glyphColor="#F5FFF4" />
       </AdvancedMarker>
       {activeMarker === 'destination' && destMarker && (
         <InfoWindow anchor={destMarker} onCloseClick={() => setActiveMarker(null)}>
-          <div className="p-1 text-xs text-[#0F2A1D] max-w-[220px]">
+          <div className="p-1 text-xs text-[#474150] max-w-[220px]">
             <div className="font-bold">Destination · {parcel.destinationCode}</div>
             <div className="mt-0.5">{parcel.destinationAddress}</div>
           </div>
@@ -330,33 +330,33 @@ export default function ParcelRouteMap({ parcel }: ParcelRouteMapProps) {
   const googleMapsDirectionsUrl = `https://www.google.com/maps/dir/?api=1&origin=${parcel.activeGroundOrigin.lat},${parcel.activeGroundOrigin.lng}&destination=${parcel.destinationPosition.lat},${parcel.destinationPosition.lng}&travelmode=driving`;
 
   return (
-    <section className="rounded-xl bg-[#0F2A1D] border border-[#6B9071]/45 p-6 sm:p-8 space-y-6">
+    <section className="rounded-xl bg-[#36313E] border border-[#9C99B8]/30 p-6 sm:p-8 space-y-6">
       {/* Header + View Mode Switcher */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#6B9071]/35 pb-5">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#9C99B8]/25 pb-5">
         <div className="space-y-1">
-          <div className="text-xs font-medium text-[#AEC3B0] flex items-center gap-1.5">
-            <Compass className="w-3.5 h-3.5 text-[#E3EED4]" />
+          <div className="text-xs font-medium text-[#FFBB00] flex items-center gap-1.5">
+            <Compass className="w-3.5 h-3.5 text-[#FFBB00]" />
             <span>Live Location &amp; Delivery Route Directions</span>
           </div>
-          <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-[#E3EED4]">
+          <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-[#F5FFF4]">
             {parcel.currentLocationLabel}
           </h3>
-          <p className="text-xs sm:text-sm text-[#AEC3B0]">{parcel.currentLocationDetails}</p>
+          <p className="text-xs sm:text-sm text-[#9C99B8]">{parcel.currentLocationDetails}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <div
             role="group"
             aria-label="Map view mode"
-            className="inline-flex items-center gap-1 p-1 rounded-lg bg-[#375534] border border-[#6B9071]/45"
+            className="inline-flex items-center gap-1 p-1 rounded-lg bg-[#474150] border border-[#9C99B8]/35"
           >
             <button
               type="button"
               onClick={() => setViewMode('directions')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
                 viewMode === 'directions'
-                  ? 'bg-[#E3EED4] text-[#0F2A1D]'
-                  : 'text-[#AEC3B0] hover:text-[#E3EED4]'
+                  ? 'bg-[#FFBB00] text-[#474150]'
+                  : 'text-[#9C99B8] hover:text-[#F5FFF4]'
               }`}
             >
               <Navigation className="w-3.5 h-3.5" />
@@ -365,10 +365,10 @@ export default function ParcelRouteMap({ parcel }: ParcelRouteMapProps) {
             <button
               type="button"
               onClick={() => setViewMode('corridor')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-colors whitespace-nowrap ${
                 viewMode === 'corridor'
-                  ? 'bg-[#E3EED4] text-[#0F2A1D]'
-                  : 'text-[#AEC3B0] hover:text-[#E3EED4]'
+                  ? 'bg-[#FFBB00] text-[#474150]'
+                  : 'text-[#9C99B8] hover:text-[#F5FFF4]'
               }`}
             >
               <Globe className="w-3.5 h-3.5" />
@@ -380,7 +380,7 @@ export default function ParcelRouteMap({ parcel }: ParcelRouteMapProps) {
             href={googleMapsDirectionsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg border border-[#6B9071]/60 text-[#E3EED4] hover:bg-[#375534] transition-colors whitespace-nowrap"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg border border-[#9C99B8]/45 text-[#F5FFF4] hover:border-[#FFBB00] hover:text-[#FFBB00] transition-colors whitespace-nowrap"
           >
             <RouteIcon className="w-3.5 h-3.5" />
             <span>Open Directions</span>
@@ -390,7 +390,7 @@ export default function ParcelRouteMap({ parcel }: ParcelRouteMapProps) {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Interactive Google Map */}
-        <div className="lg:col-span-7 rounded-xl overflow-hidden border border-[#6B9071]/45 bg-[#375534] h-[380px] sm:h-[440px]">
+        <div className="lg:col-span-7 rounded-xl overflow-hidden border border-[#9C99B8]/35 bg-[#474150] h-[380px] sm:h-[440px]">
           {MAPS_API_KEY ? (
             <APIProvider apiKey={MAPS_API_KEY} libraries={['marker', 'routes']} language="en">
               <GoogleMap
@@ -415,12 +415,12 @@ export default function ParcelRouteMap({ parcel }: ParcelRouteMapProps) {
             </APIProvider>
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center space-y-3">
-              <MapPin className="w-8 h-8 text-[#E3EED4]" />
+              <MapPin className="w-8 h-8 text-[#FFBB00]" />
               <div className="space-y-1 max-w-sm">
-                <div className="text-sm font-semibold text-[#E3EED4]">
+                <div className="text-sm font-semibold text-[#F5FFF4]">
                   {parcel.currentLocationLabel}
                 </div>
-                <p className="text-xs text-[#AEC3B0]">
+                <p className="text-xs text-[#9C99B8]">
                   Coordinates: {parcel.currentPosition.lat.toFixed(4)},{' '}
                   {parcel.currentPosition.lng.toFixed(4)} → Destination:{' '}
                   {parcel.destinationAddress}
@@ -430,7 +430,7 @@ export default function ParcelRouteMap({ parcel }: ParcelRouteMapProps) {
                 href={googleMapsDirectionsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#E3EED4] text-[#0F2A1D] hover:bg-[#AEC3B0] transition-colors"
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#FFBB00] text-[#474150] hover:bg-[#F5FFF4] transition-colors"
               >
                 Open Route Directions in Google Maps
               </a>
@@ -439,72 +439,72 @@ export default function ParcelRouteMap({ parcel }: ParcelRouteMapProps) {
         </div>
 
         {/* Turn-by-Turn Delivery Directions & Position Details */}
-        <div className="lg:col-span-5 rounded-xl bg-[#375534] border border-[#6B9071]/45 p-5 flex flex-col justify-between h-[380px] sm:h-[440px]">
+        <div className="lg:col-span-5 rounded-xl bg-[#474150] border border-[#9C99B8]/30 p-5 flex flex-col justify-between h-[380px] sm:h-[440px]">
           <div className="space-y-4 overflow-hidden flex flex-col h-full">
-            <div className="flex items-start justify-between gap-3 border-b border-[#6B9071]/35 pb-3 shrink-0">
+            <div className="flex items-start justify-between gap-3 border-b border-[#9C99B8]/25 pb-3 shrink-0">
               <div className="space-y-1">
-                <div className="text-xs font-medium text-[#AEC3B0]">
+                <div className="text-xs font-medium text-[#9C99B8]">
                   {isAirborne
                     ? 'Scheduled Arrival-Hub Final-Mile Route'
                     : 'Active Final-Mile Road Directions'}
                 </div>
-                <div className="text-xs text-[#E3EED4] font-medium">
+                <div className="text-xs text-[#F5FFF4] font-medium">
                   {parcel.activeGroundOriginLabel} → {parcel.destinationAddress}
                 </div>
               </div>
               {routeSummary && viewMode === 'directions' && (
                 <div className="text-right shrink-0 font-mono tabular-nums">
-                  <div className="text-sm font-bold text-[#E3EED4]">
+                  <div className="text-sm font-bold text-[#FFBB00]">
                     {routeSummary.distanceText}
                   </div>
-                  <div className="text-[11px] text-[#AEC3B0]">{routeSummary.durationText}</div>
+                  <div className="text-[11px] text-[#9C99B8]">{routeSummary.durationText}</div>
                 </div>
               )}
             </div>
 
             {viewMode === 'corridor' ? (
               <div className="space-y-3 text-xs overflow-y-auto pr-1">
-                <div className="p-3.5 rounded-lg bg-[#0F2A1D] border border-[#6B9071]/40 space-y-1">
-                  <div className="text-[#AEC3B0]">01 · Origin Departure Hub</div>
-                  <div className="font-semibold text-[#E3EED4]">
+                <div className="p-3.5 rounded-lg bg-[#36313E] border border-[#9C99B8]/30 space-y-1">
+                  <div className="text-[#9C99B8]">01 · Origin Departure Hub</div>
+                  <div className="font-semibold text-[#F5FFF4]">
                     {parcel.originFacility} ({parcel.originCode})
                   </div>
-                  <div className="font-mono text-[11px] text-[#AEC3B0] tabular-nums">
+                  <div className="font-mono text-[11px] text-[#9C99B8] tabular-nums">
                     {parcel.originPosition.lat.toFixed(4)}, {parcel.originPosition.lng.toFixed(4)}
                   </div>
                 </div>
-                <div className="p-3.5 rounded-lg bg-[#0F2A1D] border border-[#E3EED4]/65 space-y-1">
-                  <div className="text-[#AEC3B0]">02 · Current Parcel Position</div>
-                  <div className="font-semibold text-[#E3EED4]">{parcel.currentLocationLabel}</div>
-                  <div className="text-[#AEC3B0]">{parcel.currentLocationDetails}</div>
-                  <div className="font-mono text-[11px] text-[#E3EED4]/90 tabular-nums">
+                <div className="p-3.5 rounded-lg bg-[#36313E] border border-[#FFBB00]/75 space-y-1">
+                  <div className="text-[#FFBB00] font-medium">02 · Current Parcel Position</div>
+                  <div className="font-semibold text-[#F5FFF4]">{parcel.currentLocationLabel}</div>
+                  <div className="text-[#9C99B8]">{parcel.currentLocationDetails}</div>
+                  <div className="font-mono text-[11px] text-[#F5FFF4]/90 tabular-nums">
                     {parcel.currentPosition.lat.toFixed(4)}, {parcel.currentPosition.lng.toFixed(4)}
                   </div>
                 </div>
-                <div className="p-3.5 rounded-lg bg-[#0F2A1D] border border-[#6B9071]/40 space-y-1">
-                  <div className="text-[#AEC3B0]">03 · Final Delivery Destination</div>
-                  <div className="font-semibold text-[#E3EED4]">
+                <div className="p-3.5 rounded-lg bg-[#36313E] border border-[#9C99B8]/30 space-y-1">
+                  <div className="text-[#9C99B8]">03 · Final Delivery Destination</div>
+                  <div className="font-semibold text-[#F5FFF4]">
                     {parcel.destinationAddress} ({parcel.destinationCode})
                   </div>
-                  <div className="font-mono text-[11px] text-[#AEC3B0] tabular-nums">
+                  <div className="font-mono text-[11px] text-[#9C99B8] tabular-nums">
                     {parcel.destinationPosition.lat.toFixed(4)},{' '}
                     {parcel.destinationPosition.lng.toFixed(4)}
                   </div>
                 </div>
               </div>
             ) : routeLoading ? (
-              <div className="flex-1 flex items-center justify-center text-xs text-[#AEC3B0]">
+              <div className="flex-1 flex items-center justify-center text-xs text-[#9C99B8]">
                 Calculating ground route &amp; turn-by-turn directions...
               </div>
             ) : routeError ? (
               <div className="space-y-3 text-xs">
-                <p className="p-3.5 rounded-lg bg-[#0F2A1D] border border-[#6B9071]/45 text-[#E3EED4]">
+                <p className="p-3.5 rounded-lg bg-[#36313E] border border-[#FFBB00]/45 text-[#F5FFF4]">
                   {routeError}
                 </p>
-                <div className="p-3.5 rounded-lg bg-[#0F2A1D]/70 border border-[#6B9071]/35 space-y-1.5">
-                  <div className="font-semibold text-[#E3EED4]">Route Endpoints</div>
-                  <div className="text-[#AEC3B0]">From: {parcel.activeGroundOriginLabel}</div>
-                  <div className="text-[#AEC3B0]">To: {parcel.destinationAddress}</div>
+                <div className="p-3.5 rounded-lg bg-[#36313E]/80 border border-[#9C99B8]/25 space-y-1.5">
+                  <div className="font-semibold text-[#F5FFF4]">Route Endpoints</div>
+                  <div className="text-[#9C99B8]">From: {parcel.activeGroundOriginLabel}</div>
+                  <div className="text-[#9C99B8]">To: {parcel.destinationAddress}</div>
                 </div>
               </div>
             ) : routeSummary && routeSummary.steps.length > 0 ? (
@@ -512,15 +512,15 @@ export default function ParcelRouteMap({ parcel }: ParcelRouteMapProps) {
                 {routeSummary.steps.map((step, index) => (
                   <li
                     key={step.id}
-                    className="p-3 rounded-lg bg-[#0F2A1D]/85 border border-[#6B9071]/35 flex items-start gap-3 text-xs"
+                    className="p-3 rounded-lg bg-[#36313E] border border-[#9C99B8]/25 flex items-start gap-3 text-xs"
                   >
-                    <span className="font-mono font-semibold text-[#AEC3B0] shrink-0 tabular-nums mt-0.5">
+                    <span className="font-mono font-semibold text-[#FFBB00] shrink-0 tabular-nums mt-0.5">
                       {String(index + 1).padStart(2, '0')}
                     </span>
                     <div className="flex-1 min-w-0 space-y-1">
-                      <div className="text-[#E3EED4] leading-snug">{step.instruction}</div>
+                      <div className="text-[#F5FFF4] leading-snug">{step.instruction}</div>
                       {(step.distanceText || step.durationText) && (
-                        <div className="font-mono text-[11px] text-[#AEC3B0] tabular-nums">
+                        <div className="font-mono text-[11px] text-[#9C99B8] tabular-nums">
                           {[step.distanceText, step.durationText].filter(Boolean).join(' · ')}
                         </div>
                       )}
@@ -529,7 +529,7 @@ export default function ParcelRouteMap({ parcel }: ParcelRouteMapProps) {
                 ))}
               </ol>
             ) : (
-              <div className="flex-1 flex items-center justify-center text-xs text-[#AEC3B0]">
+              <div className="flex-1 flex items-center justify-center text-xs text-[#9C99B8]">
                 Select Delivery Directions to view street-level steps.
               </div>
             )}

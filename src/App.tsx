@@ -457,16 +457,16 @@ export default function App() {
   const currentRegion = CORRIDOR_REGIONS[activeRegion];
 
   return (
-    <div className="min-h-screen bg-[#375534] text-[#E3EED4] flex flex-col">
+    <div className="min-h-screen bg-[#474150] text-[#F5FFF4] flex flex-col">
       {mapsQuotaExceeded && (
-        <div className="bg-amber-50 border-b border-amber-200 text-amber-900 px-4 py-2.5 text-xs md:text-sm text-center sticky top-0 z-50 shadow-sm">
+        <div className="bg-[#FFBB00] border-b border-[#474150]/20 text-[#474150] px-4 py-2.5 text-xs md:text-sm text-center sticky top-0 z-50 font-medium">
           <span>
             Google Maps Platform quota reached. If you are the app owner, visit{' '}
             <a
               href="https://developers.google.com/maps/ai/ai-studio?utm_campaign=gmp_mcp_codeassist_v1_aistudio#quota_exceeded_errors"
               target="_blank"
               rel="noopener noreferrer"
-              className="underline font-semibold text-amber-950 hover:text-amber-800"
+              className="underline font-bold text-[#474150]"
             >
               maps developer site
             </a>{' '}
@@ -475,7 +475,7 @@ export default function App() {
         </div>
       )}
       {/* Top Bar Contract: 1-row, 3-zone header separated by gap-8 */}
-      <header className="sticky top-0 z-40 h-16 bg-[#0F2A1D]/90 backdrop-blur-md border-b border-[#6B9071]/35 px-4 sm:px-8 flex items-center justify-between gap-8">
+      <header className="sticky top-0 z-40 h-16 bg-[#36313E]/95 backdrop-blur-md border-b border-[#9C99B8]/25 px-4 sm:px-8 flex items-center justify-between gap-8">
         {/* Zone 1: Single text element wordmark */}
         <a
           href="/"
@@ -483,7 +483,7 @@ export default function App() {
             e.preventDefault();
             navigateToHome();
           }}
-          className="text-lg font-bold tracking-tight text-[#E3EED4] whitespace-nowrap shrink-0"
+          className="text-lg font-bold tracking-tight text-[#F5FFF4] whitespace-nowrap shrink-0"
         >
           Global Courier
         </a>
@@ -491,7 +491,7 @@ export default function App() {
         {/* Zone 2: 5 concise single-line navigation links */}
         <nav
           aria-label="Primary navigation"
-          className="hidden md:flex items-center gap-6 text-sm font-medium text-[#AEC3B0]"
+          className="hidden md:flex items-center gap-6 text-sm font-medium text-[#9C99B8]"
         >
           <a
             href="/#about"
@@ -499,7 +499,7 @@ export default function App() {
               e.preventDefault();
               navigateToHome('about');
             }}
-            className="hover:text-[#E3EED4] transition-colors whitespace-nowrap shrink-0"
+            className="hover:text-[#F5FFF4] transition-colors whitespace-nowrap shrink-0"
           >
             About Us
           </a>
@@ -509,7 +509,7 @@ export default function App() {
               e.preventDefault();
               navigateToHome('services');
             }}
-            className="hover:text-[#E3EED4] transition-colors whitespace-nowrap shrink-0"
+            className="hover:text-[#F5FFF4] transition-colors whitespace-nowrap shrink-0"
           >
             Services
           </a>
@@ -519,7 +519,7 @@ export default function App() {
               e.preventDefault();
               navigateToHome('network');
             }}
-            className="hover:text-[#E3EED4] transition-colors whitespace-nowrap shrink-0"
+            className="hover:text-[#F5FFF4] transition-colors whitespace-nowrap shrink-0"
           >
             Global Network
           </a>
@@ -532,8 +532,8 @@ export default function App() {
             aria-current={currentPage === 'track' ? 'page' : undefined}
             className={`transition-colors whitespace-nowrap shrink-0 ${
               currentPage === 'track'
-                ? 'text-[#E3EED4] underline decoration-[#E3EED4]/70 underline-offset-4'
-                : 'hover:text-[#E3EED4]'
+                ? 'text-[#FFBB00] underline decoration-[#FFBB00] underline-offset-4'
+                : 'hover:text-[#F5FFF4]'
             }`}
           >
             Track Parcel
@@ -544,7 +544,7 @@ export default function App() {
               e.preventDefault();
               navigateToHome('contact');
             }}
-            className="hover:text-[#E3EED4] transition-colors whitespace-nowrap shrink-0"
+            className="hover:text-[#F5FFF4] transition-colors whitespace-nowrap shrink-0"
           >
             Contact Us
           </a>
@@ -558,7 +558,7 @@ export default function App() {
               e.preventDefault();
               navigateToHome('quote');
             }}
-            className="px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-[#E3EED4] text-[#0F2A1D] hover:bg-[#AEC3B0] transition-colors whitespace-nowrap shrink-0"
+            className="px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-[#FFBB00] text-[#474150] hover:bg-[#F5FFF4] transition-colors whitespace-nowrap shrink-0"
           >
             Request Quote
           </a>
@@ -566,7 +566,7 @@ export default function App() {
             type="button"
             onClick={() => setMobileMenuOpen((v) => !v)}
             aria-label="Toggle navigation menu"
-            className="md:hidden p-2 rounded-lg text-[#E3EED4] hover:bg-[#375534] min-h-[40px] min-w-[40px] flex items-center justify-center"
+            className="md:hidden p-2 rounded-lg text-[#F5FFF4] hover:bg-[#474150] min-h-[40px] min-w-[40px] flex items-center justify-center"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -575,46 +575,46 @@ export default function App() {
 
       {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-[#0F2A1D] border-b border-[#6B9071]/35 px-4 py-3 flex flex-col gap-1">
+        <div className="md:hidden bg-[#36313E] border-b border-[#9C99B8]/30 px-4 py-3 flex flex-col gap-1">
           <button
             type="button"
             onClick={() => navigateToHome('about')}
-            className="text-left px-3 py-2.5 rounded-lg text-sm font-medium text-[#E3EED4] hover:bg-[#375534] transition-colors"
+            className="text-left px-3 py-2.5 rounded-lg text-sm font-medium text-[#F5FFF4] hover:bg-[#474150] transition-colors"
           >
             About Us
           </button>
           <button
             type="button"
             onClick={() => navigateToHome('services')}
-            className="text-left px-3 py-2.5 rounded-lg text-sm font-medium text-[#E3EED4] hover:bg-[#375534] transition-colors"
+            className="text-left px-3 py-2.5 rounded-lg text-sm font-medium text-[#F5FFF4] hover:bg-[#474150] transition-colors"
           >
             Services
           </button>
           <button
             type="button"
             onClick={() => navigateToHome('network')}
-            className="text-left px-3 py-2.5 rounded-lg text-sm font-medium text-[#E3EED4] hover:bg-[#375534] transition-colors"
+            className="text-left px-3 py-2.5 rounded-lg text-sm font-medium text-[#F5FFF4] hover:bg-[#474150] transition-colors"
           >
             Global Network
           </button>
           <button
             type="button"
             onClick={() => navigateToTrack(trackQueryCode)}
-            className="text-left px-3 py-2.5 rounded-lg text-sm font-medium text-[#E3EED4] hover:bg-[#375534] transition-colors"
+            className="text-left px-3 py-2.5 rounded-lg text-sm font-medium text-[#FFBB00] hover:bg-[#474150] transition-colors"
           >
             Track Parcel
           </button>
           <button
             type="button"
             onClick={() => navigateToHome('contact')}
-            className="text-left px-3 py-2.5 rounded-lg text-sm font-medium text-[#E3EED4] hover:bg-[#375534] transition-colors"
+            className="text-left px-3 py-2.5 rounded-lg text-sm font-medium text-[#F5FFF4] hover:bg-[#474150] transition-colors"
           >
             Contact Us
           </button>
           <button
             type="button"
             onClick={() => navigateToHome('quote')}
-            className="text-left px-3 py-2.5 rounded-lg text-sm font-medium text-[#E3EED4] hover:bg-[#375534] transition-colors"
+            className="text-left px-3 py-2.5 rounded-lg text-sm font-semibold text-[#474150] bg-[#FFBB00] hover:bg-[#F5FFF4] transition-colors mt-1"
           >
             Request Quote
           </button>
@@ -637,11 +637,11 @@ export default function App() {
             {/* Left Copy Column */}
             <div className="lg:col-span-6 flex flex-col justify-between py-1 space-y-6">
               <div className="space-y-5">
-                <p className="text-xs font-medium tracking-wide text-[#AEC3B0]">
+                <p className="text-xs font-medium tracking-wide text-[#FFBB00]">
                   International Express Courier · 195+ Countries &amp; Territories
                 </p>
                 <h1
-                  className="font-bold tracking-tight text-[#E3EED4] leading-[1.07]"
+                  className="font-bold tracking-tight text-[#F5FFF4] leading-[1.07]"
                   style={{
                     fontSize: 'clamp(2.25rem, 4vw, 3.6rem)',
                     textWrap: 'balance',
@@ -649,7 +649,7 @@ export default function App() {
                 >
                   Express cargo across every border, delivered door to door.
                 </h1>
-                <p className="text-base text-[#E3EED4]/90 leading-relaxed max-w-xl tracking-[0.005em]">
+                <p className="text-base text-[#F5FFF4]/85 leading-relaxed max-w-xl tracking-[0.005em]">
                   Global Courier operates dedicated widebody air corridors, bonded
                   customs terminals, and final-mile courier fleets connecting commercial
                   capitals across Europe, the Americas, Asia-Pacific, the Middle East,
@@ -662,14 +662,14 @@ export default function App() {
               <div className="flex flex-wrap items-center gap-5 pt-2">
                 <a
                   href="#quote"
-                  className="inline-flex items-center gap-2 px-5 py-3 text-sm font-semibold rounded-lg bg-[#E3EED4] text-[#0F2A1D] hover:bg-[#AEC3B0] transition-colors whitespace-nowrap shrink-0"
+                  className="inline-flex items-center gap-2 px-5 py-3 text-sm font-semibold rounded-lg bg-[#FFBB00] text-[#474150] hover:bg-[#F5FFF4] transition-colors whitespace-nowrap shrink-0"
                 >
                   <span>Request International Quote</span>
                   <ArrowRight className="w-4 h-4" />
                 </a>
                 <a
                   href="#film"
-                  className="text-sm font-medium text-[#E3EED4] underline decoration-[#AEC3B0]/60 underline-offset-4 hover:text-[#AEC3B0] transition-colors whitespace-nowrap shrink-0"
+                  className="text-sm font-medium text-[#F5FFF4] underline decoration-[#9C99B8] underline-offset-4 hover:text-[#FFBB00] hover:decoration-[#FFBB00] transition-colors whitespace-nowrap shrink-0"
                 >
                   Watch Worldwide Film
                 </a>
@@ -677,27 +677,27 @@ export default function App() {
             </div>
 
             {/* Right Dominant Hero Visual */}
-            <div className="lg:col-span-6 relative rounded-xl overflow-hidden border border-[#6B9071]/45 bg-[#0F2A1D] min-h-[300px] lg:min-h-[440px]">
+            <div className="lg:col-span-6 relative rounded-xl overflow-hidden border border-[#9C99B8]/35 bg-[#36313E] min-h-[300px] lg:min-h-[440px]">
               {!heroImgFailed ? (
                 <img
                   src="/src/assets/images/hero_global_air_courier_1795093406333.jpg"
-                  alt="Global Courier widebody international air freighter and green express courier vans staged on airport tarmac"
+                  alt="Global Courier widebody international air freighter and express dispatch vehicles staged on airport tarmac"
                   referrerPolicy="no-referrer"
                   onError={() => setHeroImgFailed(true)}
                   className="w-full h-full object-cover lg:h-full"
                 />
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-[#0F2A1D]">
-                  <Globe className="w-10 h-10 text-[#AEC3B0] mb-3" />
-                  <p className="text-sm font-semibold text-[#E3EED4]">
+                <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-[#36313E]">
+                  <Globe className="w-10 h-10 text-[#FFBB00] mb-3" />
+                  <p className="text-sm font-semibold text-[#F5FFF4]">
                     Global Air Express &amp; Intercontinental Fleet
                   </p>
                 </div>
               )}
-              <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6 bg-gradient-to-t from-[#0F2A1D]/95 via-[#0F2A1D]/55 to-transparent">
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#E3EED4]">
+              <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6 bg-gradient-to-t from-[#36313E]/95 via-[#36313E]/65 to-transparent">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#F5FFF4]">
                   <span>Dedicated Air Fleet · Nightly Intercontinental Uplift</span>
-                  <span className="font-mono text-[#AEC3B0] tabular-nums">
+                  <span className="font-mono font-semibold text-[#FFBB00] tabular-nums">
                     LHR · FRA · SIN · JFK · DXB
                   </span>
                 </div>
@@ -706,7 +706,7 @@ export default function App() {
           </div>
 
           {/* Full-Width 4-Column Quantitative Proof Bar */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-[#6B9071]/35 rounded-xl bg-[#0F2A1D] border border-[#6B9071]/45 overflow-hidden">
+          <div className="grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-[#9C99B8]/25 rounded-xl bg-[#36313E] border border-[#9C99B8]/30 overflow-hidden">
             {[
               { value: '195+', label: 'Countries & Territories Served' },
               { value: '24–48h', label: 'Major Global Hub Transit' },
@@ -714,10 +714,10 @@ export default function App() {
               { value: '6 Hubs', label: 'Bonded Intercontinental Gateways' },
             ].map((item) => (
               <div key={item.label} className="p-5 sm:p-6">
-                <div className="font-mono text-2xl sm:text-3xl font-bold text-[#E3EED4] tabular-nums">
+                <div className="font-mono text-2xl sm:text-3xl font-bold text-[#FFBB00] tabular-nums">
                   {item.value}
                 </div>
-                <div className="text-xs sm:text-sm text-[#AEC3B0] mt-1">
+                <div className="text-xs sm:text-sm text-[#9C99B8] mt-1">
                   {item.label}
                 </div>
               </div>
@@ -728,16 +728,16 @@ export default function App() {
         {/* COMPACT WAYBILL LAUNCHER TO DEDICATED /track PAGE */}
         <section
           aria-label="Quick parcel tracking"
-          className="rounded-xl bg-[#0F2A1D] border border-[#6B9071]/45 p-6 sm:p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6"
+          className="rounded-xl bg-[#36313E] border border-[#9C99B8]/30 p-6 sm:p-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6"
         >
           <div className="space-y-1.5 max-w-xl">
-            <p className="text-xs font-medium text-[#AEC3B0]">
+            <p className="text-xs font-medium text-[#FFBB00]">
               Dedicated Tracking Portal
             </p>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#E3EED4]">
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#F5FFF4]">
               Paste your waybill code to open full parcel details, map &amp; history.
             </h2>
-            <p className="text-xs sm:text-sm text-[#AEC3B0]">
+            <p className="text-xs sm:text-sm text-[#9C99B8]">
               View live shipment position, turn-by-turn delivery directions, customs status,
               and complete custody records.
             </p>
@@ -745,7 +745,7 @@ export default function App() {
 
           <form onSubmit={handleQuickTrackSubmit} className="flex flex-col sm:flex-row gap-2.5 lg:w-[460px] shrink-0">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-[#AEC3B0] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-4 h-4 text-[#9C99B8] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 value={quickWaybill}
@@ -753,12 +753,12 @@ export default function App() {
                 onPaste={handleQuickTrackPaste}
                 placeholder="Paste tracking code"
                 aria-label="Quick parcel waybill lookup"
-                className="w-full pl-10 pr-3.5 py-2.5 text-sm font-mono rounded-lg bg-[#375534] border border-[#6B9071]/60 text-[#E3EED4] placeholder:text-[#AEC3B0]/65 focus:outline-none focus:border-[#E3EED4]"
+                className="w-full pl-10 pr-3.5 py-2.5 text-sm font-mono rounded-lg bg-[#474150] border border-[#9C99B8]/45 text-[#F5FFF4] placeholder:text-[#9C99B8]/70 focus:outline-none focus:border-[#FFBB00] focus:ring-1 focus:ring-[#FFBB00]/50"
               />
             </div>
             <button
               type="submit"
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#E3EED4] text-[#0F2A1D] hover:bg-[#AEC3B0] transition-colors whitespace-nowrap shrink-0"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#FFBB00] text-[#474150] hover:bg-[#F5FFF4] transition-colors whitespace-nowrap shrink-0"
             >
               <span>Track Parcel</span>
               <ArrowRight className="w-4 h-4" />
@@ -770,16 +770,16 @@ export default function App() {
         <section id="about" className="space-y-8 scroll-mt-24">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             <div className="lg:col-span-6 space-y-4">
-              <p className="text-xs font-medium text-[#AEC3B0]">
+              <p className="text-xs font-medium text-[#FFBB00]">
                 About Global Courier
               </p>
               <h2
-                className="text-2xl sm:text-3xl font-bold tracking-tight text-[#E3EED4]"
+                className="text-2xl sm:text-3xl font-bold tracking-tight text-[#F5FFF4]"
                 style={{ textWrap: 'balance' }}
               >
                 An independent international carrier built around border reliability.
               </h2>
-              <p className="text-sm sm:text-base text-[#E3EED4]/90 leading-relaxed">
+              <p className="text-sm sm:text-base text-[#F5FFF4]/85 leading-relaxed">
                 Founded to give commercial exporters, design houses, legal practices, and
                 medical laboratories direct control over cross-border freight, Global
                 Courier bridges six bonded airport terminals with local courier teams on
@@ -814,15 +814,15 @@ export default function App() {
               ].map((item) => (
                 <div
                   key={item.index}
-                  className="p-5 rounded-xl bg-[#0F2A1D] border border-[#6B9071]/40 space-y-2"
+                  className="p-5 rounded-xl bg-[#36313E] border border-[#9C99B8]/30 space-y-2 hover:border-[#FFBB00]/55 transition-colors"
                 >
-                  <div className="font-mono text-xs font-semibold text-[#AEC3B0]">
+                  <div className="font-mono text-xs font-semibold text-[#FFBB00]">
                     {item.index}
                   </div>
-                  <h3 className="text-base font-semibold text-[#E3EED4]">
+                  <h3 className="text-base font-semibold text-[#F5FFF4]">
                     {item.title}
                   </h3>
-                  <p className="text-xs text-[#E3EED4]/85 leading-relaxed">
+                  <p className="text-xs text-[#9C99B8] leading-relaxed">
                     {item.text}
                   </p>
                 </div>
@@ -833,19 +833,19 @@ export default function App() {
 
         {/* 2. GLOBAL OPERATIONS VIDEO & EDITORIAL WRITEUP */}
         <section id="film" className="space-y-8 scroll-mt-24">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#6B9071]/35 pb-5">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#9C99B8]/25 pb-5">
             <div className="space-y-2 max-w-2xl">
-              <p className="text-xs font-medium text-[#AEC3B0]">
+              <p className="text-xs font-medium text-[#FFBB00]">
                 Worldwide Operations Reel
               </p>
               <h2
-                className="text-2xl sm:text-3xl font-bold tracking-tight text-[#E3EED4]"
+                className="text-2xl sm:text-3xl font-bold tracking-tight text-[#F5FFF4]"
                 style={{ textWrap: 'balance' }}
               >
                 Inside our cross-border air, port, and doorstep network.
               </h2>
             </div>
-            <p className="text-sm text-[#AEC3B0] max-w-md leading-relaxed">
+            <p className="text-sm text-[#9C99B8] max-w-md leading-relaxed">
               Watch how a priority international parcel moves from departure tarmac
               loading through bonded customs inspection to final recipient signature.
             </p>
@@ -853,8 +853,8 @@ export default function App() {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
             {/* HTML5 Video Player Container */}
-            <div className="lg:col-span-7 rounded-xl overflow-hidden border border-[#6B9071]/45 bg-[#0F2A1D] flex flex-col">
-              <div className="relative aspect-video bg-[#0F2A1D]">
+            <div className="lg:col-span-7 rounded-xl overflow-hidden border border-[#9C99B8]/30 bg-[#36313E] flex flex-col">
+              <div className="relative aspect-video bg-[#36313E]">
                 <video
                   ref={videoRef}
                   src="/assets/worldwide_courier_reel.mp4"
@@ -873,9 +873,9 @@ export default function App() {
                 </video>
               </div>
 
-              <div className="p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 border-t border-[#6B9071]/35 bg-[#0F2A1D]">
-                <div className="text-xs text-[#AEC3B0]">
-                  <span className="font-semibold text-[#E3EED4]">
+              <div className="p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 border-t border-[#9C99B8]/25 bg-[#36313E]">
+                <div className="text-xs text-[#9C99B8]">
+                  <span className="font-semibold text-[#F5FFF4]">
                     Global Corridor Film
                   </span>
                   <span className="mx-2" aria-hidden="true">
@@ -887,7 +887,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={handleTogglePlay}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-[#6B9071]/60 text-[#E3EED4] hover:bg-[#375534] transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-[#9C99B8]/45 text-[#F5FFF4] hover:border-[#FFBB00] hover:text-[#FFBB00] transition-colors"
                   >
                     {isPlaying ? (
                       <>
@@ -904,7 +904,7 @@ export default function App() {
                   <button
                     type="button"
                     onClick={handleToggleMute}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-[#6B9071]/60 text-[#E3EED4] hover:bg-[#375534] transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-[#9C99B8]/45 text-[#F5FFF4] hover:border-[#FFBB00] hover:text-[#FFBB00] transition-colors"
                   >
                     {isMuted ? (
                       <>
@@ -933,17 +933,21 @@ export default function App() {
                     onClick={() => handleSelectChapter(chapter)}
                     className={`w-full text-left p-5 rounded-xl border transition-colors ${
                       isActive
-                        ? 'bg-[#0F2A1D] border-[#E3EED4]/70'
-                        : 'bg-[#0F2A1D]/55 border-[#6B9071]/40 hover:bg-[#0F2A1D]/85'
+                        ? 'bg-[#36313E] border-[#FFBB00]'
+                        : 'bg-[#36313E]/65 border-[#9C99B8]/25 hover:bg-[#36313E] hover:border-[#9C99B8]/55'
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-3 text-xs text-[#AEC3B0]">
-                      <span className="font-mono font-semibold text-[#E3EED4]">
+                    <div className="flex items-center justify-between gap-3 text-xs text-[#9C99B8]">
+                      <span
+                        className={`font-mono font-semibold ${
+                          isActive ? 'text-[#FFBB00]' : 'text-[#F5FFF4]'
+                        }`}
+                      >
                         {chapter.index}. {chapter.title}
                       </span>
                       <span className="truncate">{chapter.location}</span>
                     </div>
-                    <p className="text-xs sm:text-sm text-[#E3EED4]/85 mt-2 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-[#F5FFF4]/85 mt-2 leading-relaxed">
                       {chapter.summary}
                     </p>
                   </button>
@@ -955,12 +959,12 @@ export default function App() {
 
         {/* 3. WORLDWIDE SERVICES & EDITORIAL PHOTOGRAPHY */}
         <section id="services" className="space-y-8 scroll-mt-24">
-          <div className="space-y-2 max-w-2xl border-b border-[#6B9071]/35 pb-5">
-            <p className="text-xs font-medium text-[#AEC3B0]">
+          <div className="space-y-2 max-w-2xl border-b border-[#9C99B8]/25 pb-5">
+            <p className="text-xs font-medium text-[#FFBB00]">
               Core International Capabilities
             </p>
             <h2
-              className="text-2xl sm:text-3xl font-bold tracking-tight text-[#E3EED4]"
+              className="text-2xl sm:text-3xl font-bold tracking-tight text-[#F5FFF4]"
               style={{ textWrap: 'balance' }}
             >
               Built for border velocity, regulatory clarity, and fragile cargo.
@@ -969,8 +973,8 @@ export default function App() {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
             {/* 01. Customs & Automated Sorting (7 cols) */}
-            <article className="lg:col-span-7 rounded-xl overflow-hidden border border-[#6B9071]/45 bg-[#0F2A1D] flex flex-col">
-              <div className="aspect-[16/10] overflow-hidden bg-[#0F2A1D]">
+            <article className="lg:col-span-7 rounded-xl overflow-hidden border border-[#9C99B8]/30 bg-[#36313E] flex flex-col">
+              <div className="aspect-[16/10] overflow-hidden bg-[#36313E]">
                 {!hubImgFailed ? (
                   <img
                     src="/src/assets/images/customs_hub_sorting_1795093406671.jpg"
@@ -980,20 +984,20 @@ export default function App() {
                     className="w-full h-full object-cover transition-transform duration-300 hover:scale-[1.02]"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-[#0F2A1D] text-xs text-[#AEC3B0]">
+                  <div className="w-full h-full flex items-center justify-center bg-[#36313E] text-xs text-[#9C99B8]">
                     Automated Customs Hub
                   </div>
                 )}
               </div>
               <div className="p-6 sm:p-7 flex-1 flex flex-col justify-between space-y-4">
                 <div className="space-y-2.5">
-                  <div className="text-xs text-[#AEC3B0]">
+                  <div className="text-xs text-[#FFBB00] font-medium">
                     Bonded Clearing · HS-Code Validation · Zero Paperwork Delays
                   </div>
-                  <h3 className="text-xl font-semibold text-[#E3EED4]">
+                  <h3 className="text-xl font-semibold text-[#F5FFF4]">
                     01. Pre-Cleared International Express &amp; Customs Brokerage
                   </h3>
-                  <p className="text-sm text-[#E3EED4]/85 leading-relaxed">
+                  <p className="text-sm text-[#F5FFF4]/85 leading-relaxed">
                     International delays rarely happen in the air—they happen at customs
                     desks. Our licensed brokerage specialists validate commercial invoices,
                     origin certificates, and Harmonized System duty schedules prior to
@@ -1001,7 +1005,7 @@ export default function App() {
                     gates within minutes of arrival.
                   </p>
                 </div>
-                <div className="pt-4 border-t border-[#6B9071]/30 flex flex-wrap items-center justify-between gap-2 text-xs text-[#AEC3B0] font-mono tabular-nums">
+                <div className="pt-4 border-t border-[#9C99B8]/25 flex flex-wrap items-center justify-between gap-2 text-xs text-[#9C99B8] font-mono tabular-nums">
                   <span>DDP &amp; DDU Trade Terms Supported</span>
                   <span>24/7 Bonded Hub Processing</span>
                 </div>
@@ -1009,8 +1013,8 @@ export default function App() {
             </article>
 
             {/* 02. Executive & Diplomatic Doorstep Delivery (5 cols) */}
-            <article className="lg:col-span-5 rounded-xl overflow-hidden border border-[#6B9071]/45 bg-[#0F2A1D] flex flex-col">
-              <div className="aspect-[4/3] overflow-hidden bg-[#0F2A1D]">
+            <article className="lg:col-span-5 rounded-xl overflow-hidden border border-[#9C99B8]/30 bg-[#36313E] flex flex-col">
+              <div className="aspect-[4/3] overflow-hidden bg-[#36313E]">
                 {!handoffImgFailed ? (
                   <img
                     src="/src/assets/images/courier_global_handoff_1795093407503.jpg"
@@ -1020,27 +1024,27 @@ export default function App() {
                     className="w-full h-full object-cover transition-transform duration-300 hover:scale-[1.02]"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-[#0F2A1D] text-xs text-[#AEC3B0]">
+                  <div className="w-full h-full flex items-center justify-center bg-[#36313E] text-xs text-[#9C99B8]">
                     Doorstep Signature Delivery
                   </div>
                 )}
               </div>
               <div className="p-6 sm:p-7 flex-1 flex flex-col justify-between space-y-4">
                 <div className="space-y-2.5">
-                  <div className="text-xs text-[#AEC3B0]">
+                  <div className="text-xs text-[#FFBB00] font-medium">
                     Hand-Carry · Architectural &amp; Legal · Named Recipient
                   </div>
-                  <h3 className="text-xl font-semibold text-[#E3EED4]">
+                  <h3 className="text-xl font-semibold text-[#F5FFF4]">
                     02. White-Glove Doorstep &amp; Diplomatic Handoff
                   </h3>
-                  <p className="text-sm text-[#E3EED4]/85 leading-relaxed">
+                  <p className="text-sm text-[#F5FFF4]/85 leading-relaxed">
                     Sensitive contracts, luxury retail allocations, and engineering prototypes
                     never pass into unverified third-party lockers. Our dedicated courier
                     personnel collect verifiable digital signatures and photographic chain-of-custody
                     records across 420+ metropolitan centers.
                   </p>
                 </div>
-                <div className="pt-4 border-t border-[#6B9071]/30 flex items-center justify-between text-xs text-[#AEC3B0] font-mono tabular-nums">
+                <div className="pt-4 border-t border-[#9C99B8]/25 flex items-center justify-between text-xs text-[#9C99B8] font-mono tabular-nums">
                   <span>Named-Signer Verification</span>
                   <span>Tamper-Evident Seals</span>
                 </div>
@@ -1048,8 +1052,8 @@ export default function App() {
             </article>
 
             {/* 03. Full-Width Intermodal Air-Sea & Cold Chain Feature (12 cols) */}
-            <article className="lg:col-span-12 rounded-xl overflow-hidden border border-[#6B9071]/45 bg-[#0F2A1D] grid grid-cols-1 lg:grid-cols-12 items-stretch">
-              <div className="lg:col-span-6 min-h-[260px] overflow-hidden bg-[#0F2A1D]">
+            <article className="lg:col-span-12 rounded-xl overflow-hidden border border-[#9C99B8]/30 bg-[#36313E] grid grid-cols-1 lg:grid-cols-12 items-stretch">
+              <div className="lg:col-span-6 min-h-[260px] overflow-hidden bg-[#36313E]">
                 {!corridorImgFailed ? (
                   <img
                     src="/src/assets/images/maritime_air_corridor_1795093406240.jpg"
@@ -1059,20 +1063,20 @@ export default function App() {
                     className="w-full h-full object-cover lg:h-full transition-transform duration-300 hover:scale-[1.02]"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-[#0F2A1D] text-xs text-[#AEC3B0]">
+                  <div className="w-full h-full flex items-center justify-center bg-[#36313E] text-xs text-[#9C99B8]">
                     Intermodal Global Freight Corridor
                   </div>
                 )}
               </div>
               <div className="lg:col-span-6 p-6 sm:p-8 flex flex-col justify-between space-y-6">
                 <div className="space-y-3">
-                  <div className="text-xs text-[#AEC3B0]">
+                  <div className="text-xs text-[#FFBB00] font-medium">
                     Cold-Chain +2°C to +8°C · Heavy Pallet Freight · Scheduled Lanes
                   </div>
-                  <h3 className="text-xl sm:text-2xl font-semibold text-[#E3EED4]">
+                  <h3 className="text-xl sm:text-2xl font-semibold text-[#F5FFF4]">
                     03. Intermodal Air-Sea Corridors &amp; Cold-Chain Freight
                   </h3>
-                  <p className="text-sm text-[#E3EED4]/85 leading-relaxed">
+                  <p className="text-sm text-[#F5FFF4]/85 leading-relaxed">
                     When businesses scale beyond single parcels into recurring international
                     inventory replenishment, Global Courier synchronizes ocean-port consolidation
                     with priority air bridges. Medical reagents, clinical diagnostics, and
@@ -1081,24 +1085,24 @@ export default function App() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-[#6B9071]/30">
+                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-[#9C99B8]/25">
                   <div>
-                    <div className="font-mono text-lg font-bold text-[#E3EED4] tabular-nums">
+                    <div className="font-mono text-lg font-bold text-[#FFBB00] tabular-nums">
                       +2° / +8°C
                     </div>
-                    <div className="text-xs text-[#AEC3B0]">Validated Cold Holds</div>
+                    <div className="text-xs text-[#9C99B8]">Validated Cold Holds</div>
                   </div>
                   <div>
-                    <div className="font-mono text-lg font-bold text-[#E3EED4] tabular-nums">
+                    <div className="font-mono text-lg font-bold text-[#FFBB00] tabular-nums">
                       2,500 kg
                     </div>
-                    <div className="text-xs text-[#AEC3B0]">Max Pallet Uplift</div>
+                    <div className="text-xs text-[#9C99B8]">Max Pallet Uplift</div>
                   </div>
                   <div>
-                    <div className="font-mono text-lg font-bold text-[#E3EED4] tabular-nums">
+                    <div className="font-mono text-lg font-bold text-[#FFBB00] tabular-nums">
                       100%
                     </div>
-                    <div className="text-xs text-[#AEC3B0]">Carbon Offset Program</div>
+                    <div className="text-xs text-[#9C99B8]">Carbon Offset Program</div>
                   </div>
                 </div>
               </div>
@@ -1108,13 +1112,13 @@ export default function App() {
 
         {/* 4. GLOBAL NETWORK CORRIDORS & CLIENT PROOF */}
         <section id="network" className="space-y-10 scroll-mt-24">
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-[#6B9071]/35 pb-5">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-[#9C99B8]/25 pb-5">
             <div className="space-y-2 max-w-2xl">
-              <p className="text-xs font-medium text-[#AEC3B0]">
+              <p className="text-xs font-medium text-[#FFBB00]">
                 Regional Transit Schedules
               </p>
               <h2
-                className="text-2xl sm:text-3xl font-bold tracking-tight text-[#E3EED4]"
+                className="text-2xl sm:text-3xl font-bold tracking-tight text-[#F5FFF4]"
                 style={{ textWrap: 'balance' }}
               >
                 Direct global lanes operating on fixed departure clocks.
@@ -1125,7 +1129,7 @@ export default function App() {
             <div
               role="tablist"
               aria-label="Global shipping regions"
-              className="flex flex-wrap items-center gap-1 p-1 rounded-lg bg-[#0F2A1D] border border-[#6B9071]/40"
+              className="flex flex-wrap items-center gap-1 p-1 rounded-lg bg-[#36313E] border border-[#9C99B8]/30"
             >
               {(Object.keys(CORRIDOR_REGIONS) as RegionKey[]).map((key) => {
                 const region = CORRIDOR_REGIONS[key];
@@ -1137,10 +1141,10 @@ export default function App() {
                     role="tab"
                     aria-selected={active}
                     onClick={() => setActiveRegion(key)}
-                    className={`px-3.5 py-2 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 ${
+                    className={`px-3.5 py-2 text-xs font-semibold rounded-md transition-colors whitespace-nowrap shrink-0 ${
                       active
-                        ? 'bg-[#E3EED4] text-[#0F2A1D]'
-                        : 'text-[#AEC3B0] hover:text-[#E3EED4]'
+                        ? 'bg-[#FFBB00] text-[#474150]'
+                        : 'text-[#9C99B8] hover:text-[#F5FFF4]'
                     }`}
                   >
                     {region.label}
@@ -1150,51 +1154,51 @@ export default function App() {
             </div>
           </div>
 
-          <div className="rounded-xl bg-[#0F2A1D] border border-[#6B9071]/45 p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="rounded-xl bg-[#36313E] border border-[#9C99B8]/30 p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div className="lg:col-span-5 space-y-4">
-              <h3 className="text-xl font-bold text-[#E3EED4]">
+              <h3 className="text-xl font-bold text-[#F5FFF4]">
                 {currentRegion.label} Corridor Operations
               </h3>
-              <p className="text-sm text-[#E3EED4]/85 leading-relaxed">
+              <p className="text-sm text-[#F5FFF4]/85 leading-relaxed">
                 {currentRegion.description}
               </p>
               <dl className="space-y-3 pt-2 text-xs">
                 <div>
-                  <dt className="text-[#AEC3B0]">Primary Gateways</dt>
-                  <dd className="text-[#E3EED4] font-medium mt-0.5">
+                  <dt className="text-[#9C99B8]">Primary Gateways</dt>
+                  <dd className="text-[#F5FFF4] font-medium mt-0.5">
                     {currentRegion.primaryHubs}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-[#AEC3B0]">Door-to-Door Window</dt>
-                  <dd className="font-mono text-[#E3EED4] font-semibold mt-0.5 tabular-nums">
+                  <dt className="text-[#9C99B8]">Door-to-Door Window</dt>
+                  <dd className="font-mono text-[#FFBB00] font-semibold mt-0.5 tabular-nums">
                     {currentRegion.transitWindow}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-[#AEC3B0]">Customs Protocol</dt>
-                  <dd className="text-[#E3EED4] font-medium mt-0.5">
+                  <dt className="text-[#9C99B8]">Customs Protocol</dt>
+                  <dd className="text-[#F5FFF4] font-medium mt-0.5">
                     {currentRegion.customsClearance}
                   </dd>
                 </div>
               </dl>
             </div>
 
-            <div className="lg:col-span-7 divide-y divide-[#6B9071]/30">
+            <div className="lg:col-span-7 divide-y divide-[#9C99B8]/25">
               {currentRegion.lanes.map((lane) => (
                 <div
                   key={lane.route}
                   className="py-4 first:pt-0 last:pb-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
                 >
                   <div>
-                    <div className="text-sm font-semibold text-[#E3EED4]">
+                    <div className="text-sm font-semibold text-[#F5FFF4]">
                       {lane.route}
                     </div>
-                    <div className="text-xs text-[#AEC3B0] mt-0.5">
+                    <div className="text-xs text-[#9C99B8] mt-0.5">
                       {lane.cadence}
                     </div>
                   </div>
-                  <div className="font-mono text-xs sm:text-sm font-semibold text-[#E3EED4] tabular-nums shrink-0">
+                  <div className="font-mono text-xs sm:text-sm font-semibold text-[#FFBB00] tabular-nums shrink-0">
                     {lane.transit}
                   </div>
                 </div>
@@ -1204,31 +1208,31 @@ export default function App() {
 
           {/* Client Proof / Testimonials Adjacent to Network Claims */}
           <div id="proof" className="grid grid-cols-1 md:grid-cols-2 gap-6 scroll-mt-24">
-            <blockquote className="p-6 sm:p-7 rounded-xl bg-[#0F2A1D] border border-[#6B9071]/40 flex flex-col justify-between space-y-5">
-              <p className="text-sm sm:text-base text-[#E3EED4]/90 leading-relaxed">
+            <blockquote className="p-6 sm:p-7 rounded-xl bg-[#36313E] border border-[#9C99B8]/30 flex flex-col justify-between space-y-5">
+              <p className="text-sm sm:text-base text-[#F5FFF4]/90 leading-relaxed">
                 &ldquo;Moving seasonal hardware samples from Shenzhen to retail studios in
                 London and Paris used to stall for four days at customs. With Global
                 Courier&rsquo;s pre-cleared air corridors, our clearance release dropped by
                 38% and every showroom launch hit its morning window.&rdquo;
               </p>
-              <footer className="pt-4 border-t border-[#6B9071]/30 text-xs">
-                <div className="font-semibold text-[#E3EED4]">Henrik Lindholm</div>
-                <div className="text-[#AEC3B0] mt-0.5">
+              <footer className="pt-4 border-t border-[#9C99B8]/25 text-xs">
+                <div className="font-semibold text-[#F5FFF4]">Henrik Lindholm</div>
+                <div className="text-[#9C99B8] mt-0.5">
                   VP Global Logistics, Nordholm Acoustics · Stockholm &amp; London
                 </div>
               </footer>
             </blockquote>
 
-            <blockquote className="p-6 sm:p-7 rounded-xl bg-[#0F2A1D] border border-[#6B9071]/40 flex flex-col justify-between space-y-5">
-              <p className="text-sm sm:text-base text-[#E3EED4]/90 leading-relaxed">
+            <blockquote className="p-6 sm:p-7 rounded-xl bg-[#36313E] border border-[#9C99B8]/30 flex flex-col justify-between space-y-5">
+              <p className="text-sm sm:text-base text-[#F5FFF4]/90 leading-relaxed">
                 &ldquo;Our clinical diagnostic kits require strict +2°C to +8°C continuity
                 between Zurich, Singapore, and Toronto. Over 18 months and 1,400+ cross-border
                 consignments, Global Courier maintained 99.7% on-schedule arrival with zero
                 thermal excursions.&rdquo;
               </p>
-              <footer className="pt-4 border-t border-[#6B9071]/30 text-xs">
-                <div className="font-semibold text-[#E3EED4]">Dr. Amara Osei-Mensah</div>
-                <div className="text-[#AEC3B0] mt-0.5">
+              <footer className="pt-4 border-t border-[#9C99B8]/25 text-xs">
+                <div className="font-semibold text-[#F5FFF4]">Dr. Amara Osei-Mensah</div>
+                <div className="text-[#9C99B8] mt-0.5">
                   Director of Supply Operations, Helvetia BioSystems · Zurich
                 </div>
               </footer>
@@ -1239,26 +1243,26 @@ export default function App() {
         {/* 5. CONTACT US & INTERNATIONAL QUOTE DESK */}
         <section
           id="contact"
-          className="rounded-xl bg-[#0F2A1D] border border-[#6B9071]/45 p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start scroll-mt-24"
+          className="rounded-xl bg-[#36313E] border border-[#9C99B8]/30 p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start scroll-mt-24"
         >
           <div id="quote" className="lg:col-span-5 space-y-4 scroll-mt-24">
-            <p className="text-xs font-medium text-[#AEC3B0]">
+            <p className="text-xs font-medium text-[#FFBB00]">
               Contact Us · International Dispatch Desks
             </p>
             <h2
-              className="text-2xl sm:text-3xl font-bold tracking-tight text-[#E3EED4]"
+              className="text-2xl sm:text-3xl font-bold tracking-tight text-[#F5FFF4]"
               style={{ textWrap: 'balance' }}
             >
               Speak with our global routing team or request a rate card.
             </h2>
-            <p className="text-sm text-[#E3EED4]/85 leading-relaxed">
+            <p className="text-sm text-[#F5FFF4]/85 leading-relaxed">
               Reach our regional operations desks directly or share your origin,
               destination, and shipment weight. We respond with exact flight-window
               options, inclusive customs brokerage fees, and door-to-door transit
               commitments.
             </p>
-            <div className="pt-2 space-y-2 text-xs text-[#AEC3B0] border-t border-[#6B9071]/30">
-              <div className="text-[#E3EED4] font-medium">
+            <div className="pt-2 space-y-2 text-xs text-[#9C99B8] border-t border-[#9C99B8]/25">
+              <div className="text-[#F5FFF4] font-medium">
                 Email: dispatch@globalcourier.com
               </div>
               <div>London Hub: 14 Cargo Terminal Rd, Heathrow · +44 20 7946 0821</div>
@@ -1269,17 +1273,17 @@ export default function App() {
 
           <div className="lg:col-span-7">
             {quoteConfirmation ? (
-              <div className="p-6 rounded-xl bg-[#375534] border border-[#6B9071] space-y-4">
+              <div className="p-6 rounded-xl bg-[#474150] border border-[#FFBB00]/75 space-y-4">
                 <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-[#E3EED4] shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-5 h-5 text-[#FFBB00] shrink-0 mt-0.5" />
                   <div className="space-y-1">
-                    <h3 className="text-base font-semibold text-[#E3EED4]">
+                    <h3 className="text-base font-semibold text-[#F5FFF4]">
                       International Rate Inquiry Logged ({quoteConfirmation.reference})
                     </h3>
-                    <p className="text-sm text-[#E3EED4]/90">
+                    <p className="text-sm text-[#F5FFF4]/90">
                       Corridor: {quoteConfirmation.route} · {quoteConfirmation.tier}
                     </p>
-                    <p className="text-xs text-[#AEC3B0]">
+                    <p className="text-xs text-[#9C99B8]">
                       Our cross-border routing desk has queued your commercial rate card and
                       HS-code pre-clearance instructions for {quoteConfirmation.email}.
                     </p>
@@ -1293,7 +1297,7 @@ export default function App() {
                     setDestinationCountry('');
                     setShipmentNotes('');
                   }}
-                  className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#E3EED4] text-[#0F2A1D] hover:bg-[#AEC3B0] transition-colors"
+                  className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#FFBB00] text-[#474150] hover:bg-[#F5FFF4] transition-colors"
                 >
                   Submit Another Route
                 </button>
@@ -1304,7 +1308,7 @@ export default function App() {
                   <div>
                     <label
                       htmlFor="origin-country"
-                      className="block text-xs font-medium text-[#AEC3B0] mb-1.5"
+                      className="block text-xs font-medium text-[#9C99B8] mb-1.5"
                     >
                       Origin City / Country
                     </label>
@@ -1314,13 +1318,13 @@ export default function App() {
                       value={originCountry}
                       onChange={(e) => setOriginCountry(e.target.value)}
                       placeholder="e.g. London, United Kingdom"
-                      className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-[#375534] border border-[#6B9071]/60 text-[#E3EED4] placeholder:text-[#AEC3B0]/65 focus:outline-none focus:border-[#E3EED4]"
+                      className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-[#474150] border border-[#9C99B8]/45 text-[#F5FFF4] placeholder:text-[#9C99B8]/70 focus:outline-none focus:border-[#FFBB00] focus:ring-1 focus:ring-[#FFBB00]/50"
                     />
                   </div>
                   <div>
                     <label
                       htmlFor="dest-country"
-                      className="block text-xs font-medium text-[#AEC3B0] mb-1.5"
+                      className="block text-xs font-medium text-[#9C99B8] mb-1.5"
                     >
                       Destination City / Country
                     </label>
@@ -1330,7 +1334,7 @@ export default function App() {
                       value={destinationCountry}
                       onChange={(e) => setDestinationCountry(e.target.value)}
                       placeholder="e.g. Singapore"
-                      className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-[#375534] border border-[#6B9071]/60 text-[#E3EED4] placeholder:text-[#AEC3B0]/65 focus:outline-none focus:border-[#E3EED4]"
+                      className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-[#474150] border border-[#9C99B8]/45 text-[#F5FFF4] placeholder:text-[#9C99B8]/70 focus:outline-none focus:border-[#FFBB00] focus:ring-1 focus:ring-[#FFBB00]/50"
                     />
                   </div>
                 </div>
@@ -1339,7 +1343,7 @@ export default function App() {
                   <div className="sm:col-span-2">
                     <label
                       htmlFor="service-tier"
-                      className="block text-xs font-medium text-[#AEC3B0] mb-1.5"
+                      className="block text-xs font-medium text-[#9C99B8] mb-1.5"
                     >
                       International Service Tier
                     </label>
@@ -1347,7 +1351,7 @@ export default function App() {
                       id="service-tier"
                       value={serviceTier}
                       onChange={(e) => setServiceTier(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-[#375534] border border-[#6B9071]/60 text-[#E3EED4] focus:outline-none focus:border-[#E3EED4]"
+                      className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-[#474150] border border-[#9C99B8]/45 text-[#F5FFF4] focus:outline-none focus:border-[#FFBB00] focus:ring-1 focus:ring-[#FFBB00]/50"
                     >
                       <option>Air Express Priority (24–48h)</option>
                       <option>Diplomatic &amp; Hand-Carry Courier</option>
@@ -1358,7 +1362,7 @@ export default function App() {
                   <div>
                     <label
                       htmlFor="weight-kg"
-                      className="block text-xs font-medium text-[#AEC3B0] mb-1.5"
+                      className="block text-xs font-medium text-[#9C99B8] mb-1.5"
                     >
                       Est. Weight (kg)
                     </label>
@@ -1369,7 +1373,7 @@ export default function App() {
                       step="0.5"
                       value={weightKg}
                       onChange={(e) => setWeightKg(e.target.value)}
-                      className="w-full px-3.5 py-2.5 text-sm font-mono tabular-nums rounded-lg bg-[#375534] border border-[#6B9071]/60 text-[#E3EED4] focus:outline-none focus:border-[#E3EED4]"
+                      className="w-full px-3.5 py-2.5 text-sm font-mono tabular-nums rounded-lg bg-[#474150] border border-[#9C99B8]/45 text-[#F5FFF4] focus:outline-none focus:border-[#FFBB00] focus:ring-1 focus:ring-[#FFBB00]/50"
                     />
                   </div>
                 </div>
@@ -1378,7 +1382,7 @@ export default function App() {
                   <div>
                     <label
                       htmlFor="contact-email"
-                      className="block text-xs font-medium text-[#AEC3B0] mb-1.5"
+                      className="block text-xs font-medium text-[#9C99B8] mb-1.5"
                     >
                       Business Email
                     </label>
@@ -1388,13 +1392,13 @@ export default function App() {
                       value={contactEmail}
                       onChange={(e) => setContactEmail(e.target.value)}
                       placeholder="logistics@company.com"
-                      className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-[#375534] border border-[#6B9071]/60 text-[#E3EED4] placeholder:text-[#AEC3B0]/65 focus:outline-none focus:border-[#E3EED4]"
+                      className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-[#474150] border border-[#9C99B8]/45 text-[#F5FFF4] placeholder:text-[#9C99B8]/70 focus:outline-none focus:border-[#FFBB00] focus:ring-1 focus:ring-[#FFBB00]/50"
                     />
                   </div>
                   <div>
                     <label
                       htmlFor="shipment-notes"
-                      className="block text-xs font-medium text-[#AEC3B0] mb-1.5"
+                      className="block text-xs font-medium text-[#9C99B8] mb-1.5"
                     >
                       Cargo Notes (Optional)
                     </label>
@@ -1404,24 +1408,24 @@ export default function App() {
                       value={shipmentNotes}
                       onChange={(e) => setShipmentNotes(e.target.value)}
                       placeholder="Customs HS code, dimensions, or temp range"
-                      className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-[#375534] border border-[#6B9071]/60 text-[#E3EED4] placeholder:text-[#AEC3B0]/65 focus:outline-none focus:border-[#E3EED4]"
+                      className="w-full px-3.5 py-2.5 text-sm rounded-lg bg-[#474150] border border-[#9C99B8]/45 text-[#F5FFF4] placeholder:text-[#9C99B8]/70 focus:outline-none focus:border-[#FFBB00] focus:ring-1 focus:ring-[#FFBB00]/50"
                     />
                   </div>
                 </div>
 
                 {formError && (
-                  <p className="text-xs font-medium text-[#E3EED4] bg-[#375534] border border-[#E3EED4]/50 rounded-lg px-3.5 py-2">
+                  <p className="text-xs font-medium text-[#F5FFF4] bg-[#474150] border border-[#FFBB00]/70 rounded-lg px-3.5 py-2">
                     {formError}
                   </p>
                 )}
 
                 <div className="pt-1 flex flex-wrap items-center justify-between gap-4">
-                  <span className="text-xs text-[#AEC3B0]">
+                  <span className="text-xs text-[#9C99B8]">
                     Includes customs pre-clearance review and lane pricing.
                   </span>
                   <button
                     type="submit"
-                    className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#E3EED4] text-[#0F2A1D] hover:bg-[#AEC3B0] transition-colors whitespace-nowrap shrink-0"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#FFBB00] text-[#474150] hover:bg-[#F5FFF4] transition-colors whitespace-nowrap shrink-0"
                   >
                     <span>Calculate Worldwide Quote</span>
                     <ArrowRight className="w-4 h-4" />
@@ -1435,10 +1439,10 @@ export default function App() {
       )}
 
       {/* Quiet Editorial Footer */}
-      <footer className="border-t border-[#6B9071]/35 bg-[#0F2A1D] px-4 sm:px-8 py-8">
-        <div className="max-w-[1280px] mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-[#AEC3B0]">
+      <footer className="border-t border-[#9C99B8]/25 bg-[#36313E] px-4 sm:px-8 py-8">
+        <div className="max-w-[1280px] mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs text-[#9C99B8]">
           <div className="space-y-1">
-            <div className="font-bold text-sm text-[#E3EED4]">Global Courier</div>
+            <div className="font-bold text-sm text-[#F5FFF4]">Global Courier</div>
             <div>
               Worldwide International Courier &amp; Bonded Air Express · London · New York ·
               Singapore · Frankfurt
@@ -1451,7 +1455,7 @@ export default function App() {
                 e.preventDefault();
                 navigateToHome('about');
               }}
-              className="hover:text-[#E3EED4] transition-colors"
+              className="hover:text-[#FFBB00] transition-colors"
             >
               About Us
             </a>
@@ -1461,7 +1465,7 @@ export default function App() {
                 e.preventDefault();
                 navigateToHome('services');
               }}
-              className="hover:text-[#E3EED4] transition-colors"
+              className="hover:text-[#FFBB00] transition-colors"
             >
               Services
             </a>
@@ -1471,7 +1475,7 @@ export default function App() {
                 e.preventDefault();
                 navigateToHome('network');
               }}
-              className="hover:text-[#E3EED4] transition-colors"
+              className="hover:text-[#FFBB00] transition-colors"
             >
               Global Network
             </a>
@@ -1481,7 +1485,7 @@ export default function App() {
                 e.preventDefault();
                 navigateToTrack(trackQueryCode);
               }}
-              className="hover:text-[#E3EED4] transition-colors"
+              className="hover:text-[#FFBB00] transition-colors"
             >
               Track Parcel
             </a>
@@ -1491,7 +1495,7 @@ export default function App() {
                 e.preventDefault();
                 navigateToHome('contact');
               }}
-              className="hover:text-[#E3EED4] transition-colors"
+              className="hover:text-[#FFBB00] transition-colors"
             >
               Contact Us
             </a>
